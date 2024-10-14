@@ -257,6 +257,9 @@ private:
 		bool is_rtl = false;
 
 		bool localize_numeral_system = true;
+		bool localization_auto_collect = false;
+		String translation_comment;
+		String translation_context;
 
 		// Extra properties.
 
@@ -628,6 +631,15 @@ public:
 
 	void set_localize_numeral_system(bool p_enable);
 	bool is_localizing_numeral_system() const;
+
+	void set_localization_auto_collect(bool p_enable);
+	bool is_localization_auto_collect() const;
+
+	void set_translation_comment(const String &p_comment);
+	String get_translation_comment() const;
+
+	void set_translation_context(const String &p_context);
+	String get_translation_context() const;
 
 #ifndef DISABLE_DEPRECATED
 	void set_auto_translate(bool p_enable);

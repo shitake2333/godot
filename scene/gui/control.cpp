@@ -478,6 +478,21 @@ void Control::_validate_property(PropertyInfo &p_property) const {
 		p_property.hint = PROPERTY_HINT_LINK;
 	}
 
+	if (p_property.name == "translation_comment") {
+		if (is_localization_auto_collect()) {
+			p_property.usage = PROPERTY_USAGE_EDITOR;
+		} else {
+			p_property.usage = PROPERTY_USAGE_READ_ONLY;
+		}
+	}
+	if (p_property.name == "translation_context") {
+		if (is_localization_auto_collect()) {
+			p_property.usage = PROPERTY_USAGE_EDITOR;
+		} else {
+			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
+		}
+	}
+
 	// Validate which positioning properties should be displayed depending on the parent and the layout mode.
 	Node *parent_node = get_parent_control();
 	if (!parent_node) {
@@ -3145,6 +3160,61 @@ bool Control::is_localizing_numeral_system() const {
 	return data.localize_numeral_system;
 }
 
+void Control::set_localization_auto_collect(bool p_enable) {
+	ERR_MAIN_THREAD_GUARD;
+	if (p_enable == data.localization_auto_collect) {
+		return;
+	}
+
+	data.localization_auto_collect = p_enable;
+
+	if (data.localization_auto_collect) {
+		set_auto_translate_mode(AUTO_TRANSLATE_MODE_ALWAYS);
+	} else {
+		set_auto_translate_mode(AUTO_TRANSLATE_MODE_INHERIT);
+	}
+	notify_property_list_changed();
+	queue_redraw();
+	notification(MainLoop::NOTIFICATION_TRANSLATION_CHANGED);
+}
+
+bool Control::is_localization_auto_collect() const {
+	ERR_READ_THREAD_GUARD_V(false);
+	return data.localization_auto_collect;
+}
+
+void Control::set_translation_comment(const String &p_comment) {
+	ERR_MAIN_THREAD_GUARD;
+	if (p_comment == data.translation_comment) {
+		return;
+	}
+
+	data.translation_comment = p_comment;
+
+	notification(MainLoop::NOTIFICATION_TRANSLATION_CHANGED);
+}
+
+String Control::get_translation_comment() const {
+	ERR_READ_THREAD_GUARD_V(String());
+	return data.translation_comment;
+}
+
+void Control::set_translation_context(const String &p_context) {
+	ERR_MAIN_THREAD_GUARD;
+	if (p_context == data.translation_context) {
+		return;
+	}
+
+	data.translation_context = p_context;
+
+	notification(MainLoop::NOTIFICATION_TRANSLATION_CHANGED);
+}
+
+String Control::get_translation_context() const {
+	ERR_READ_THREAD_GUARD_V(String());
+	return data.translation_context;
+}
+
 #ifndef DISABLE_DEPRECATED
 void Control::set_auto_translate(bool p_enable) {
 	ERR_MAIN_THREAD_GUARD;
@@ -3570,6 +3640,12 @@ void Control::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("set_localize_numeral_system", "enable"), &Control::set_localize_numeral_system);
 	ClassDB::bind_method(D_METHOD("is_localizing_numeral_system"), &Control::is_localizing_numeral_system);
+	ClassDB::bind_method(D_METHOD("set_localization_auto_collect", "enable"), &Control::set_localization_auto_collect);
+	ClassDB::bind_method(D_METHOD("is_localization_auto_collect"), &Control::is_localization_auto_collect);
+	ClassDB::bind_method(D_METHOD("set_translation_comment", "comment"), &Control::set_translation_comment);
+	ClassDB::bind_method(D_METHOD("get_translation_comment"), &Control::get_translation_comment);
+	ClassDB::bind_method(D_METHOD("set_translation_context", "context"), &Control::set_translation_context);
+	ClassDB::bind_method(D_METHOD("get_translation_context"), &Control::get_translation_context);
 
 	ADD_GROUP("Layout", "");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "clip_contents"), "set_clip_contents", "is_clipping_contents");
@@ -3618,6 +3694,9 @@ void Control::_bind_methods() {
 
 	ADD_GROUP("Localization", "");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "localize_numeral_system"), "set_localize_numeral_system", "is_localizing_numeral_system");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "localization_auto_collect"), "set_localization_auto_collect", "is_localization_auto_collect");
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "translation_comment", PROPERTY_HINT_MULTILINE_TEXT), "set_translation_comment", "get_translation_comment");
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "translation_context"), "set_translation_context", "get_translation_context");
 
 #ifndef DISABLE_DEPRECATED
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "auto_translate", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NONE), "set_auto_translate", "is_auto_translating");
