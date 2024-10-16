@@ -36,6 +36,9 @@
 #include "core/variant/typed_array.h"
 #include "scene/main/scene_tree.h"
 #include "scene/scene_string_names.h"
+#ifdef TOOLS_ENABLED
+#include "editor/localization/localization.h"
+#endif
 
 class Viewport;
 class Window;
@@ -126,6 +129,13 @@ public:
 	struct Comparator {
 		bool operator()(const Node *p_a, const Node *p_b) const { return p_b->is_greater_than(p_a); }
 	};
+
+#ifdef TOOLS_ENABLED
+	struct LocalizationResource {
+		TranslationResourceType type;
+		String property_getter;
+	};
+#endif
 
 	static int orphan_node_count;
 
@@ -250,6 +260,16 @@ private:
 		bool inside_tree : 1;
 		bool ready_notified : 1;
 		bool ready_first : 1;
+
+#ifdef TOOLS_ENABLED
+		bool has_localization_resource = false;
+		List<LocalizationResource> localization_resources;
+#endif
+
+		bool localize_numeral_system = true;
+		bool localization_auto_collect = false;
+		String localization_comment;
+		String localization_context;
 
 		AutoTranslateMode auto_translate_mode = AUTO_TRANSLATE_MODE_INHERIT;
 		mutable bool is_auto_translating = true;
@@ -734,6 +754,26 @@ public:
 	Ref<MultiplayerAPI> get_multiplayer() const;
 
 	/* INTERNATIONALIZATION */
+
+#if TOOLS_ENABLED
+	void set_has_localization_resource(bool p_enable);
+	bool get_has_localization_resource() const;
+
+	void set_localization_resources(const List<LocalizationResource> *p_resources);
+	List<LocalizationResource> get_localization_resources();
+#endif
+
+	void set_localize_numeral_system(bool p_enable);
+	bool is_localizing_numeral_system() const;
+
+	void set_localization_auto_collect(bool p_enable);
+	bool is_localization_auto_collect() const;
+
+	void set_localization_comment(const String &p_comment);
+	String get_localization_comment() const;
+
+	void set_localization_context(const String &p_context);
+	String get_localization_context() const;
 
 	void set_auto_translate_mode(AutoTranslateMode p_mode);
 	AutoTranslateMode get_auto_translate_mode() const;
