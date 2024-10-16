@@ -1278,6 +1278,7 @@ bool Node::is_processing_unhandled_key_input() const {
 	return data.unhandled_key_input;
 }
 
+#if TOOLS_ENABLED
 void Node::set_has_localization_resource(bool p_enable) {
 	ERR_THREAD_GUARD;
 	if (data.has_localization_resource == p_enable) {
@@ -1303,6 +1304,7 @@ List<Node::LocalizationResource> Node::get_localization_resources() {
 	ERR_READ_THREAD_GUARD_V(List<Node::LocalizationResource>());
 	return data.localization_resources;
 }
+#endif
 
 void Node::set_localize_numeral_system(bool p_enable) {
 	ERR_THREAD_GUARD;
