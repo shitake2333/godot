@@ -421,4 +421,14 @@ bool TextureButton::is_flipped_v() const {
 	return vflip;
 }
 
-TextureButton::TextureButton() {}
+TextureButton::TextureButton() {
+#if TOOLS_ENABLED
+	set_has_i18n_resource(true);
+	add_i18n_resource(I18N_RESOURCE_IMAGE, "texture_normal");
+	add_i18n_resource(I18N_RESOURCE_IMAGE, "texture_pressed");
+	add_i18n_resource(I18N_RESOURCE_IMAGE, "texture_hover");
+	add_i18n_resource(I18N_RESOURCE_IMAGE, "texture_disabled");
+	add_i18n_resource(I18N_RESOURCE_IMAGE, "texture_focused");
+	add_i18n_resource(I18N_RESOURCE_IMAGE, "texture_click_mask");
+#endif
+}

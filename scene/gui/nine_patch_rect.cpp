@@ -189,6 +189,11 @@ NinePatchRect::AxisStretchMode NinePatchRect::get_v_axis_stretch_mode() const {
 
 NinePatchRect::NinePatchRect() {
 	set_mouse_filter(MOUSE_FILTER_IGNORE);
+
+#if TOOLS_ENABLED
+	set_has_i18n_resource(true);
+	add_i18n_resource(I18N_RESOURCE_IMAGE, "texture");
+#endif
 }
 
 NinePatchRect::~NinePatchRect() {

@@ -127,6 +127,7 @@ public:
 	enum I18nResourceType {
 		I18N_RESOURCE_TEXT,
 		I18N_RESOURCE_AUDIO,
+		I18N_RESOURCE_VIDEO,
 		I18N_RESOURCE_IMAGE,
 		I18N_RESOURCE_FONT
 	};
@@ -272,11 +273,11 @@ private:
 		List<I18nResource> localization_resources;
 #endif
 
-		bool localize_numeral_system = true;
 		bool i18n_auto_collect = false;
 		String i18n_comment;
 		String i18n_context;
 
+		bool localize_numeral_system = true;
 		AutoTranslateMode auto_translate_mode = AUTO_TRANSLATE_MODE_INHERIT;
 		mutable bool is_auto_translating = true;
 		mutable bool is_auto_translate_dirty = true;

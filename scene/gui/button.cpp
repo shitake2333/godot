@@ -848,6 +848,10 @@ Button::Button(const String &p_text) {
 	set_mouse_filter(MOUSE_FILTER_STOP);
 
 	set_text(p_text);
+#if TOOLS_ENABLED
+	set_has_i18n_resource(true);
+	add_i18n_resource(I18N_RESOURCE_TEXT, "text");
+#endif
 }
 
 Button::~Button() {

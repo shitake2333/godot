@@ -537,7 +537,13 @@ void VideoStreamPlayer::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::STRING_NAME, "bus", PROPERTY_HINT_ENUM, ""), "set_bus", "get_bus");
 }
 
-VideoStreamPlayer::VideoStreamPlayer() {}
+VideoStreamPlayer::VideoStreamPlayer() {
+
+#if TOOLS_ENABLED
+	set_has_i18n_resource(true);
+	add_i18n_resource(I18N_RESOURCE_VIDEO, "stream");
+#endif
+}
 
 VideoStreamPlayer::~VideoStreamPlayer() {
 	resampler.clear(); // Not necessary here, but make in consistent with other "stream_player" classes.

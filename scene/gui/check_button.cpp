@@ -168,6 +168,11 @@ CheckButton::CheckButton(const String &p_text) :
 	} else {
 		_set_internal_margin(SIDE_RIGHT, get_icon_size().width);
 	}
+
+#if TOOLS_ENABLED
+	set_has_i18n_resource(true);
+	add_i18n_resource(I18N_RESOURCE_TEXT, "text");
+#endif
 }
 
 CheckButton::~CheckButton() {

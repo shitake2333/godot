@@ -261,6 +261,11 @@ bool TextureRect::is_flipped_v() const {
 
 TextureRect::TextureRect() {
 	set_mouse_filter(MOUSE_FILTER_PASS);
+
+#if TOOLS_ENABLED
+	set_has_i18n_resource(true);
+	add_i18n_resource(I18N_RESOURCE_IMAGE, "texture");
+#endif
 }
 
 TextureRect::~TextureRect() {

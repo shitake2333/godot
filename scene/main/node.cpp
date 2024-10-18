@@ -3558,19 +3558,33 @@ void Node::_validate_property(PropertyInfo &p_property) const {
 	if ((p_property.name == "process_thread_group_order" || p_property.name == "process_thread_messages") && data.process_thread_group == PROCESS_THREAD_GROUP_INHERIT) {
 		p_property.usage = 0;
 	}
+	if (p_property.name == "localization_group") {
+		if (!get_has_i18n_resource()) {
+			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
+		} else {
+			p_property.usage = PROPERTY_USAGE_EDITOR;
+		}
+	}
+	if (p_property.name == "i18n_auto_collect") {
+		if (!get_has_i18n_resource()) {
+			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
+		} else {
+			p_property.usage = PROPERTY_USAGE_EDITOR;
+		}
+	}
 
 	if (p_property.name == "i18n_comment") {
-		if (get_i18n_auto_collect()) {
-			p_property.usage = PROPERTY_USAGE_EDITOR;
+		if (!get_i18n_auto_collect() || !get_has_i18n_resource()) {
+			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
 		} else {
-			p_property.usage = PROPERTY_USAGE_READ_ONLY;
+			p_property.usage = PROPERTY_USAGE_EDITOR;
 		}
 	}
 	if (p_property.name == "i18n_context") {
-		if (get_i18n_auto_collect()) {
-			p_property.usage = PROPERTY_USAGE_EDITOR;
-		} else {
+		if (!get_i18n_auto_collect() || !get_has_i18n_resource()) {
 			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
+		} else {
+			p_property.usage = PROPERTY_USAGE_EDITOR;
 		}
 	}
 }
@@ -3771,7 +3785,7 @@ void Node::_bind_methods() {
 #if TOOLS_ENABLED
 	ClassDB::bind_method(D_METHOD("set_has_i18n_resource", "enable"), &Node::set_has_i18n_resource);
 	ClassDB::bind_method(D_METHOD("get_has_i18n_resource"), &Node::get_has_i18n_resource);
-	ClassDB::bind_method(D_METHOD("add_i18n_resource", "type", "property_name"), &Node::add_i18n_resource);
+	ClassDB::bind_method(D_METHOD("add_i18n_resource", "type", "property_name", "is_getter"), &Node::add_i18n_resource);
 #endif
 
 	ClassDB::bind_method(D_METHOD("set_i18n_auto_collect", "enable"), &Node::set_i18n_auto_collect);

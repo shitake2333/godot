@@ -1894,4 +1894,9 @@ TabBar::TabBar() {
 	connect(SceneStringName(mouse_exited), callable_mp(this, &TabBar::_on_mouse_exited));
 
 	property_helper.setup_for_instance(base_property_helper, this);
+
+#if TOOLS_ENABLED
+	set_has_i18n_resource(true);
+	add_i18n_resource(I18N_RESOURCE_TEXT, "");
+#endif
 }

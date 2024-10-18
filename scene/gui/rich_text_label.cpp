@@ -6692,6 +6692,11 @@ RichTextLabel::RichTextLabel(const String &p_text) {
 	stop_thread.store(false);
 
 	set_clip_contents(true);
+
+#if TOOLS_ENABLED
+	set_has_i18n_resource(true);
+	add_i18n_resource(I18N_RESOURCE_TEXT, "text");
+#endif
 }
 
 RichTextLabel::~RichTextLabel() {

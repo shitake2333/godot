@@ -1206,6 +1206,11 @@ Label::Label(const String &p_text) {
 	set_mouse_filter(MOUSE_FILTER_IGNORE);
 	set_text(p_text);
 	set_v_size_flags(SIZE_SHRINK_CENTER);
+#if TOOLS_ENABLED
+	set_has_i18n_resource(true);
+	add_i18n_resource(I18N_RESOURCE_TEXT, "text");
+	add_i18n_resource(I18N_RESOURCE_FONT, "label_settings");
+#endif
 }
 
 Label::~Label() {

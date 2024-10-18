@@ -293,4 +293,9 @@ LinkButton::LinkButton(const String &p_text) {
 	set_default_cursor_shape(CURSOR_POINTING_HAND);
 
 	set_text(p_text);
+
+#if TOOLS_ENABLED
+	set_has_i18n_resource(true);
+	add_i18n_resource(I18N_RESOURCE_TEXT, "text");
+#endif
 }

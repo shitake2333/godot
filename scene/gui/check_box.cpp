@@ -165,6 +165,11 @@ CheckBox::CheckBox(const String &p_text) :
 	} else {
 		_set_internal_margin(SIDE_LEFT, get_icon_size().width);
 	}
+
+#if TOOLS_ENABLED
+	set_has_i18n_resource(true);
+	add_i18n_resource(I18N_RESOURCE_TEXT, "text");
+#endif
 }
 
 CheckBox::~CheckBox() {

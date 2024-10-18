@@ -279,6 +279,10 @@ void AudioStreamPlayer::_bind_methods() {
 
 AudioStreamPlayer::AudioStreamPlayer() {
 	internal = memnew(AudioStreamPlayerInternal(this, callable_mp(this, &AudioStreamPlayer::play), callable_mp(this, &AudioStreamPlayer::stop), false));
+#if TOOLS_ENABLED
+	set_has_i18n_resource(true);
+	add_i18n_resource(I18N_RESOURCE_AUDIO, "stream");
+#endif
 }
 
 AudioStreamPlayer::~AudioStreamPlayer() {

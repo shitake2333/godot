@@ -599,6 +599,11 @@ OptionButton::OptionButton(const String &p_text) :
 	popup->connect("popup_hide", callable_mp((BaseButton *)this, &BaseButton::set_pressed).bind(false));
 
 	property_helper.setup_for_instance(base_property_helper, this);
+
+#if TOOLS_ENABLED
+	set_has_i18n_resource(true);
+	add_i18n_resource(I18N_RESOURCE_TEXT, "");
+#endif
 }
 
 OptionButton::~OptionButton() {
