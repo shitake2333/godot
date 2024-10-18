@@ -36,9 +36,6 @@
 #include "core/variant/typed_array.h"
 #include "scene/main/scene_tree.h"
 #include "scene/scene_string_names.h"
-#ifdef TOOLS_ENABLED
-#include "editor/localization/localization.h"
-#endif
 
 class Viewport;
 class Window;
@@ -126,14 +123,23 @@ public:
 		AUTO_TRANSLATE_MODE_DISABLED,
 	};
 
+#if TOOLS_ENABLED
+	enum I18nResourceType {
+		I18N_RESOURCE_TEXT,
+		I18N_RESOURCE_AUDIO,
+		I18N_RESOURCE_IMAGE,
+		I18N_RESOURCE_FONT
+	};
+#endif
+
 	struct Comparator {
 		bool operator()(const Node *p_a, const Node *p_b) const { return p_b->is_greater_than(p_a); }
 	};
 
 #ifdef TOOLS_ENABLED
-	struct LocalizationResource {
-		TranslationResourceType type;
-		String property_getter;
+	struct I18nResource {
+		I18nResourceType type;
+		String property_name;
 	};
 #endif
 
@@ -263,13 +269,13 @@ private:
 
 #ifdef TOOLS_ENABLED
 		bool has_localization_resource = false;
-		List<LocalizationResource> localization_resources;
+		List<I18nResource> localization_resources;
 #endif
 
 		bool localize_numeral_system = true;
-		bool localization_auto_collect = false;
-		String localization_comment;
-		String localization_context;
+		bool i18n_auto_collect = false;
+		String i18n_comment;
+		String i18n_context;
 
 		AutoTranslateMode auto_translate_mode = AUTO_TRANSLATE_MODE_INHERIT;
 		mutable bool is_auto_translating = true;
@@ -756,24 +762,25 @@ public:
 	/* INTERNATIONALIZATION */
 
 #if TOOLS_ENABLED
-	void set_has_localization_resource(bool p_enable);
-	bool get_has_localization_resource() const;
-
-	void set_localization_resources(const List<LocalizationResource> *p_resources);
-	List<LocalizationResource> get_localization_resources();
+	void set_has_i18n_resource(bool p_enable);
+	bool get_has_i18n_resource() const;
+	void add_i18n_resource(I18nResourceType type, const String &property_name);
+	List<I18nResource> get_i18n_resources();
 #endif
+
+	void set_i18n_auto_collect(bool p_enable);
+	bool get_i18n_auto_collect() const;
+
+	void set_i18n_comment(const String &p_comment);
+	String get_i18n_comment() const;
+
+	void set_i18n_context(const String &p_context);
+	String get_i18n_context() const;
+
+	/* LOCALIZATION */
 
 	void set_localize_numeral_system(bool p_enable);
 	bool is_localizing_numeral_system() const;
-
-	void set_localization_auto_collect(bool p_enable);
-	bool is_localization_auto_collect() const;
-
-	void set_localization_comment(const String &p_comment);
-	String get_localization_comment() const;
-
-	void set_localization_context(const String &p_context);
-	String get_localization_context() const;
 
 	void set_auto_translate_mode(AutoTranslateMode p_mode);
 	AutoTranslateMode get_auto_translate_mode() const;
@@ -854,6 +861,7 @@ VARIANT_ENUM_CAST(Node::ProcessThreadGroup);
 VARIANT_BITFIELD_CAST(Node::ProcessThreadMessages);
 VARIANT_ENUM_CAST(Node::InternalMode);
 VARIANT_ENUM_CAST(Node::PhysicsInterpolationMode);
+VARIANT_ENUM_CAST(Node::I18nResourceType);
 VARIANT_ENUM_CAST(Node::AutoTranslateMode);
 
 typedef HashSet<Node *, Node::Comparator> NodeSet;

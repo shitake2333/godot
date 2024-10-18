@@ -1279,7 +1279,7 @@ bool Node::is_processing_unhandled_key_input() const {
 }
 
 #if TOOLS_ENABLED
-void Node::set_has_localization_resource(bool p_enable) {
+void Node::set_has_i18n_resource(bool p_enable) {
 	ERR_THREAD_GUARD;
 	if (data.has_localization_resource == p_enable) {
 		return;
@@ -1290,18 +1290,19 @@ void Node::set_has_localization_resource(bool p_enable) {
 	notification(MainLoop::NOTIFICATION_TRANSLATION_CHANGED);
 }
 
-bool Node::get_has_localization_resource() const {
+bool Node::get_has_i18n_resource() const {
 	ERR_READ_THREAD_GUARD_V(false);
 	return data.has_localization_resource;
 }
 
-void Node::set_localization_resources(const List<LocalizationResource> *p_resources) {
+void Node::add_i18n_resource(const I18nResourceType type, const String &property_name) {
 	ERR_THREAD_GUARD;
-	data.localization_resources = *p_resources;
+	const I18nResource resource = {type, property_name};
+	data.localization_resources.push_back(resource);
 }
 
-List<Node::LocalizationResource> Node::get_localization_resources() {
-	ERR_READ_THREAD_GUARD_V(List<Node::LocalizationResource>());
+List<Node::I18nResource> Node::get_i18n_resources() {
+	ERR_READ_THREAD_GUARD_V(List<Node::I18nResource>());
 	return data.localization_resources;
 }
 #endif
@@ -1322,15 +1323,15 @@ bool Node::is_localizing_numeral_system() const {
 	return data.localize_numeral_system;
 }
 
-void Node::set_localization_auto_collect(bool p_enable) {
+void Node::set_i18n_auto_collect(bool p_enable) {
 	ERR_THREAD_GUARD;
-	if (p_enable == data.localization_auto_collect) {
+	if (p_enable == data.i18n_auto_collect) {
 		return;
 	}
 
-	data.localization_auto_collect = p_enable;
+	data.i18n_auto_collect = p_enable;
 
-	if (data.localization_auto_collect) {
+	if (data.i18n_auto_collect) {
 		set_auto_translate_mode(AUTO_TRANSLATE_MODE_ALWAYS);
 	} else {
 		set_auto_translate_mode(AUTO_TRANSLATE_MODE_INHERIT);
@@ -1339,41 +1340,41 @@ void Node::set_localization_auto_collect(bool p_enable) {
 	notification(MainLoop::NOTIFICATION_TRANSLATION_CHANGED);
 }
 
-bool Node::is_localization_auto_collect() const {
+bool Node::get_i18n_auto_collect() const {
 	ERR_READ_THREAD_GUARD_V(false);
-	return data.localization_auto_collect;
+	return data.i18n_auto_collect;
 }
 
-void Node::set_localization_comment(const String &p_comment) {
+void Node::set_i18n_comment(const String &p_comment) {
 	ERR_THREAD_GUARD;
-	if (p_comment == data.localization_comment) {
+	if (p_comment == data.i18n_comment) {
 		return;
 	}
 
-	data.localization_comment = p_comment;
+	data.i18n_comment = p_comment;
 
 	notification(MainLoop::NOTIFICATION_TRANSLATION_CHANGED);
 }
 
-String Node::get_localization_comment() const {
+String Node::get_i18n_comment() const {
 	ERR_READ_THREAD_GUARD_V(String());
-	return data.localization_comment;
+	return data.i18n_comment;
 }
 
-void Node::set_localization_context(const String &p_context) {
+void Node::set_i18n_context(const String &p_context) {
 	ERR_THREAD_GUARD;
-	if (p_context == data.localization_context) {
+	if (p_context == data.i18n_context) {
 		return;
 	}
 
-	data.localization_context = p_context;
+	data.i18n_context = p_context;
 
 	notification(MainLoop::NOTIFICATION_TRANSLATION_CHANGED);
 }
 
-String Node::get_localization_context() const {
+String Node::get_i18n_context() const {
 	ERR_READ_THREAD_GUARD_V(String());
-	return data.localization_context;
+	return data.i18n_context;
 }
 
 void Node::set_auto_translate_mode(AutoTranslateMode p_mode) {
@@ -3558,15 +3559,15 @@ void Node::_validate_property(PropertyInfo &p_property) const {
 		p_property.usage = 0;
 	}
 
-	if (p_property.name == "localization_comment") {
-		if (is_localization_auto_collect()) {
+	if (p_property.name == "i18n_comment") {
+		if (get_i18n_auto_collect()) {
 			p_property.usage = PROPERTY_USAGE_EDITOR;
 		} else {
 			p_property.usage = PROPERTY_USAGE_READ_ONLY;
 		}
 	}
-	if (p_property.name == "localization_context") {
-		if (is_localization_auto_collect()) {
+	if (p_property.name == "i18n_context") {
+		if (get_i18n_auto_collect()) {
 			p_property.usage = PROPERTY_USAGE_EDITOR;
 		} else {
 			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
@@ -3767,14 +3768,21 @@ void Node::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("is_physics_interpolated_and_enabled"), &Node::is_physics_interpolated_and_enabled);
 	ClassDB::bind_method(D_METHOD("reset_physics_interpolation"), &Node::reset_physics_interpolation);
 
+#if TOOLS_ENABLED
+	ClassDB::bind_method(D_METHOD("set_has_i18n_resource", "enable"), &Node::set_has_i18n_resource);
+	ClassDB::bind_method(D_METHOD("get_has_i18n_resource"), &Node::get_has_i18n_resource);
+	ClassDB::bind_method(D_METHOD("add_i18n_resource", "type", "property_name"), &Node::add_i18n_resource);
+#endif
+
+	ClassDB::bind_method(D_METHOD("set_i18n_auto_collect", "enable"), &Node::set_i18n_auto_collect);
+	ClassDB::bind_method(D_METHOD("get_i18n_auto_collect"), &Node::get_i18n_auto_collect);
+	ClassDB::bind_method(D_METHOD("set_i18n_comment", "comment"), &Node::set_i18n_comment);
+	ClassDB::bind_method(D_METHOD("get_i18n_comment"), &Node::get_i18n_comment);
+	ClassDB::bind_method(D_METHOD("set_i18n_context", "context"), &Node::set_i18n_context);
+	ClassDB::bind_method(D_METHOD("get_i18n_context"), &Node::get_i18n_context);
+
 	ClassDB::bind_method(D_METHOD("set_localize_numeral_system", "enable"), &Node::set_localize_numeral_system);
 	ClassDB::bind_method(D_METHOD("is_localizing_numeral_system"), &Node::is_localizing_numeral_system);
-	ClassDB::bind_method(D_METHOD("set_localization_auto_collect", "enable"), &Node::set_localization_auto_collect);
-	ClassDB::bind_method(D_METHOD("is_localization_auto_collect"), &Node::is_localization_auto_collect);
-	ClassDB::bind_method(D_METHOD("set_localization_comment", "comment"), &Node::set_localization_comment);
-	ClassDB::bind_method(D_METHOD("get_localization_comment"), &Node::get_localization_comment);
-	ClassDB::bind_method(D_METHOD("set_localization_context", "context"), &Node::set_localization_context);
-	ClassDB::bind_method(D_METHOD("get_localization_context"), &Node::get_localization_context);
 
 	ClassDB::bind_method(D_METHOD("set_auto_translate_mode", "mode"), &Node::set_auto_translate_mode);
 	ClassDB::bind_method(D_METHOD("get_auto_translate_mode"), &Node::get_auto_translate_mode);
@@ -3971,14 +3979,13 @@ void Node::_bind_methods() {
 	ADD_GROUP("Physics Interpolation", "physics_interpolation_");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "physics_interpolation_mode", PROPERTY_HINT_ENUM, "Inherit,On,Off"), "set_physics_interpolation_mode", "get_physics_interpolation_mode");
 
+	ADD_GROUP("Internationalization", "i18n_");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "i18n_auto_collect"), "set_i18n_auto_collect", "get_i18n_auto_collect");
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "i18n_comment", PROPERTY_HINT_MULTILINE_TEXT), "set_i18n_comment", "get_i18n_comment");
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "i18n_context"), "set_i18n_context", "get_i18n_context");
+
 	ADD_GROUP("Localization", "");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "localize_numeral_system"), "set_localize_numeral_system", "is_localizing_numeral_system");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "localization_auto_collect"), "set_localization_auto_collect", "is_localization_auto_collect");
-	ADD_PROPERTY(PropertyInfo(Variant::STRING, "localization_comment", PROPERTY_HINT_MULTILINE_TEXT), "set_localization_comment", "get_localization_comment");
-	ADD_PROPERTY(PropertyInfo(Variant::STRING, "localization_context"), "set_localization_context", "get_localization_context");
-
-
-	ADD_GROUP("Auto Translate", "auto_translate_");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "auto_translate_mode", PROPERTY_HINT_ENUM, "Inherit,Always,Disabled"), "set_auto_translate_mode", "get_auto_translate_mode");
 
 	ADD_GROUP("Editor Description", "editor_");

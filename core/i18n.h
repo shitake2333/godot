@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  localization.cpp                                                      */
+/*  i18n.h                                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,4 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "localization.h"
+#ifndef I18N_H
+#define I18N_H
+
+
+
+#endif //I18N_H
