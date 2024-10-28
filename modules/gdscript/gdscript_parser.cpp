@@ -98,6 +98,9 @@ GDScriptParser::GDScriptParser() {
 		register_annotation(MethodInfo("@icon", PropertyInfo(Variant::STRING, "icon_path")), AnnotationInfo::SCRIPT, &GDScriptParser::icon_annotation);
 		register_annotation(MethodInfo("@static_unload"), AnnotationInfo::SCRIPT, &GDScriptParser::static_unload_annotation);
 
+		// I18N annotations.
+		register_annotation(MethodInfo("@i18n"), AnnotationInfo::VARIABLE, &GDScriptParser::i18n_annotation);
+
 		register_annotation(MethodInfo("@onready"), AnnotationInfo::VARIABLE, &GDScriptParser::onready_annotation);
 		// Export annotations.
 		register_annotation(MethodInfo("@export"), AnnotationInfo::VARIABLE, &GDScriptParser::export_annotations<PROPERTY_HINT_NONE, Variant::NIL>);
@@ -4894,6 +4897,24 @@ bool GDScriptParser::static_unload_annotation(AnnotationNode *p_annotation, Node
 		return false;
 	}
 	class_node->annotated_static_unload = true;
+	return true;
+}
+
+bool GDScriptParser::i18n_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class) {
+#if TOOLS_ENABLED
+	ERR_FAIL_COND_V_MSG(p_target->type != Node::VARIABLE, false, vformat(R"("%s" annotation can only be applied to variables.)", p_annotation->name));
+	VariableNode *variable = static_cast<VariableNode *>(p_target);
+	StringName class_name = p_class->get_global_name();
+	StringName property_name = variable->identifier->name;
+
+	if (!ClassDB::i18n_classes.has(class_name)) {
+		ClassDB::i18n_classes[class_name] = List<StringName>();
+	}
+	if (!ClassDB::i18n_classes[class_name].find(property_name)) {
+		ClassDB::i18n_classes[class_name].push_back(property_name);
+	}
+
+#endif
 	return true;
 }
 

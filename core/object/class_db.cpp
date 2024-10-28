@@ -71,6 +71,7 @@ HashMap<StringName, StringName> ClassDB::compat_classes;
 
 #ifdef TOOLS_ENABLED
 HashMap<StringName, ObjectGDExtension> ClassDB::placeholder_extensions;
+HashMap<StringName, List<StringName>> ClassDB::i18n_classes = HashMap<StringName, List<StringName>>();
 
 class PlaceholderExtensionInstance {
 	StringName class_name;
@@ -2304,6 +2305,7 @@ void ClassDB::cleanup() {
 	resource_base_extensions.clear();
 	compat_classes.clear();
 	native_structs.clear();
+	i18n_classes.clear();
 }
 
 // Array to use in optional parameters on methods and the DEFVAL_ARRAY macro.

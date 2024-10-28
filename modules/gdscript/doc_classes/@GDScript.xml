@@ -704,6 +704,18 @@
 				[b]Note:[/b] Avoid storing lambda callables in member variables of [RefCounted]-based classes (e.g. resources), as this can lead to memory leaks. Use only method callables and optionally [method Callable.bind] or [method Callable.unbind].
 			</description>
 		</annotation>
+		<annotation name="@i18n">
+			<return type="void" />
+			<description>
+				Marks whether an property has an i18n resource. The editor will automatically collect the marked content.
+				[codeblock]
+				class_name Item extends Resource
+				@i18n var name: String
+				@i18n var description: String
+				[/codeblock]
+				[b]Note:[/b] The default i18n collection system only supports objects that inherit from [Resource]. Other types need to implement the corresponding collectors themselves.
+			</description>
+		</annotation>
 		<annotation name="@icon">
 			<return type="void" />
 			<param index="0" name="icon_path" type="String" />

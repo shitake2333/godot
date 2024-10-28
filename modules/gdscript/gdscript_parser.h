@@ -1513,6 +1513,8 @@ private:
 	bool warning_annotations(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
 	bool rpc_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
 	bool static_unload_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
+	bool i18n_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
+	
 	// Statements.
 	Node *parse_statement();
 	VariableNode *parse_variable(bool p_is_static);

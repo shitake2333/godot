@@ -159,6 +159,7 @@ public:
 
 #ifdef TOOLS_ENABLED
 	static HashMap<StringName, ObjectGDExtension> placeholder_extensions;
+	static HashMap<StringName, List<StringName>> i18n_classes;
 #endif
 
 #ifdef DEBUG_METHODS_ENABLED
