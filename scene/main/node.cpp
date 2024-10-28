@@ -1286,8 +1286,6 @@ void Node::set_has_i18n_resource(bool p_enable) {
 	}
 
 	data.has_localization_resource = p_enable;
-
-	notification(MainLoop::NOTIFICATION_TRANSLATION_CHANGED);
 }
 
 bool Node::get_has_i18n_resource() const {
@@ -1307,22 +1305,6 @@ List<Node::I18nResource> Node::get_i18n_resources() {
 }
 #endif
 
-void Node::set_localize_numeral_system(bool p_enable) {
-	ERR_THREAD_GUARD;
-	if (p_enable == data.localize_numeral_system) {
-		return;
-	}
-
-	data.localize_numeral_system = p_enable;
-
-	notification(MainLoop::NOTIFICATION_TRANSLATION_CHANGED);
-}
-
-bool Node::is_localizing_numeral_system() const {
-	ERR_READ_THREAD_GUARD_V(false);
-	return data.localize_numeral_system;
-}
-
 void Node::set_i18n_auto_collect(bool p_enable) {
 	ERR_THREAD_GUARD;
 	if (p_enable == data.i18n_auto_collect) {
@@ -1337,7 +1319,6 @@ void Node::set_i18n_auto_collect(bool p_enable) {
 		set_auto_translate_mode(AUTO_TRANSLATE_MODE_INHERIT);
 	}
 	notify_property_list_changed();
-	notification(MainLoop::NOTIFICATION_TRANSLATION_CHANGED);
 }
 
 bool Node::get_i18n_auto_collect() const {
@@ -1352,8 +1333,6 @@ void Node::set_i18n_comment(const String &p_comment) {
 	}
 
 	data.i18n_comment = p_comment;
-
-	notification(MainLoop::NOTIFICATION_TRANSLATION_CHANGED);
 }
 
 String Node::get_i18n_comment() const {
@@ -1368,13 +1347,27 @@ void Node::set_i18n_context(const String &p_context) {
 	}
 
 	data.i18n_context = p_context;
-
-	notification(MainLoop::NOTIFICATION_TRANSLATION_CHANGED);
 }
 
 String Node::get_i18n_context() const {
 	ERR_READ_THREAD_GUARD_V(String());
 	return data.i18n_context;
+}
+
+void Node::set_localize_numeral_system(bool p_enable) {
+	ERR_THREAD_GUARD;
+	if (p_enable == data.localize_numeral_system) {
+		return;
+	}
+
+	data.localize_numeral_system = p_enable;
+
+	notification(MainLoop::NOTIFICATION_TRANSLATION_CHANGED);
+}
+
+bool Node::is_localizing_numeral_system() const {
+	ERR_READ_THREAD_GUARD_V(false);
+	return data.localize_numeral_system;
 }
 
 void Node::set_auto_translate_mode(AutoTranslateMode p_mode) {
@@ -3785,7 +3778,7 @@ void Node::_bind_methods() {
 #if TOOLS_ENABLED
 	ClassDB::bind_method(D_METHOD("set_has_i18n_resource", "enable"), &Node::set_has_i18n_resource);
 	ClassDB::bind_method(D_METHOD("get_has_i18n_resource"), &Node::get_has_i18n_resource);
-	ClassDB::bind_method(D_METHOD("add_i18n_resource", "type", "property_name", "is_getter"), &Node::add_i18n_resource);
+	ClassDB::bind_method(D_METHOD("add_i18n_resource", "type", "property_name"), &Node::add_i18n_resource);
 #endif
 
 	ClassDB::bind_method(D_METHOD("set_i18n_auto_collect", "enable"), &Node::set_i18n_auto_collect);
@@ -3957,6 +3950,14 @@ void Node::_bind_methods() {
 	BIND_ENUM_CONSTANT(INTERNAL_MODE_DISABLED);
 	BIND_ENUM_CONSTANT(INTERNAL_MODE_FRONT);
 	BIND_ENUM_CONSTANT(INTERNAL_MODE_BACK);
+
+#if TOOLS_ENABLED
+	BIND_ENUM_CONSTANT(I18N_RESOURCE_TEXT);
+	BIND_ENUM_CONSTANT(I18N_RESOURCE_AUDIO);
+	BIND_ENUM_CONSTANT(I18N_RESOURCE_VIDEO);
+	BIND_ENUM_CONSTANT(I18N_RESOURCE_IMAGE);
+	BIND_ENUM_CONSTANT(I18N_RESOURCE_FONT);
+#endif
 
 	BIND_ENUM_CONSTANT(AUTO_TRANSLATE_MODE_INHERIT);
 	BIND_ENUM_CONSTANT(AUTO_TRANSLATE_MODE_ALWAYS);
