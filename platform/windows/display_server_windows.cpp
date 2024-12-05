@@ -2179,12 +2179,14 @@ void DisplayServerWindows::_update_window_style(WindowID p_window, bool p_repain
 
 	ERR_FAIL_COND(!windows.has(p_window));
 	WindowData &wd = windows[p_window];
+	WindowData &parent = windows[wd.transient_parent];
 
 	DWORD style = 0;
 	DWORD style_ex = 0;
 
 	_get_window_style(p_window == MAIN_WINDOW_ID, wd.initialized, wd.fullscreen, wd.multiwindow_fs, wd.borderless, wd.resizable, wd.minimized, wd.maximized, wd.maximized_fs, wd.no_focus || wd.is_popup, style, style_ex);
 
+	SetWindowLongPtr(wd.hWnd, GWLP_HWNDPARENT, (LONG_PTR)parent.hWnd);
 	SetWindowLongPtr(wd.hWnd, GWL_STYLE, style);
 	SetWindowLongPtr(wd.hWnd, GWL_EXSTYLE, style_ex);
 

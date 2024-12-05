@@ -253,17 +253,19 @@ void Viewport::_sub_window_update_order() {
 		return;
 	}
 
-	if (!gui.sub_windows[gui.sub_windows.size() - 1].window->get_flag(Window::FLAG_ALWAYS_ON_TOP)) {
-		int index = gui.sub_windows.size() - 1;
+	for (int i = gui.sub_windows.size() - 1; i > 0; --i) {
+		if (gui.sub_windows[i].window->get_flag(Window::FLAG_ALWAYS_ON_TOP)) {
+			int index = i;
 
-		while (index > 0 && gui.sub_windows[index - 1].window->get_flag(Window::FLAG_ALWAYS_ON_TOP)) {
-			--index;
-		}
+			while (index > 0 && !gui.sub_windows[index - 1].window->get_flag(Window::FLAG_ALWAYS_ON_TOP)) {
+				--index;
+			}
 
-		if (index != (gui.sub_windows.size() - 1)) {
-			SubWindow sw = gui.sub_windows[gui.sub_windows.size() - 1];
-			gui.sub_windows.remove_at(gui.sub_windows.size() - 1);
-			gui.sub_windows.insert(index, sw);
+			if (index != i) {
+				SubWindow sw = gui.sub_windows[i];
+				gui.sub_windows.remove_at(i);
+				gui.sub_windows.insert(index, sw);
+			}
 		}
 	}
 
