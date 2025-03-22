@@ -365,7 +365,7 @@ void TabContainer::_on_mouse_exited() {
 Vector<Control *> TabContainer::_get_tab_controls() const {
 	Vector<Control *> controls;
 	for (int i = 0; i < get_child_count(); i++) {
-		Control *control = as_sortable_control(get_child(i), SortableVisbilityMode::IGNORE);
+		Control *control = as_sortable_control(get_child(i), SortableVisibilityMode::IGNORE);
 		if (!control || control == tab_bar || children_removing.has(control)) {
 			continue;
 		}
@@ -542,7 +542,7 @@ void TabContainer::add_child_notify(Node *p_child) {
 		return;
 	}
 
-	Control *c = as_sortable_control(p_child, SortableVisbilityMode::IGNORE);
+	Control *c = as_sortable_control(p_child, SortableVisibilityMode::IGNORE);
 	if (!c) {
 		return;
 	}
@@ -572,7 +572,7 @@ void TabContainer::move_child_notify(Node *p_child) {
 		return;
 	}
 
-	Control *c = as_sortable_control(p_child, SortableVisbilityMode::IGNORE);
+	Control *c = as_sortable_control(p_child, SortableVisibilityMode::IGNORE);
 	if (c) {
 		tab_bar->move_tab(c->get_meta("_tab_index"), get_tab_idx_from_control(c));
 	}
@@ -587,7 +587,7 @@ void TabContainer::remove_child_notify(Node *p_child) {
 		return;
 	}
 
-	Control *c = as_sortable_control(p_child, SortableVisbilityMode::IGNORE);
+	Control *c = as_sortable_control(p_child, SortableVisibilityMode::IGNORE);
 	if (!c) {
 		return;
 	}
@@ -725,7 +725,7 @@ void TabContainer::set_tab_focus_mode(Control::FocusMode p_focus_mode) {
 }
 
 Control::FocusMode TabContainer::get_tab_focus_mode() const {
-	return tab_bar->get_focus_mode();
+	return tab_bar->get_focus_mode_with_recursive();
 }
 
 void TabContainer::set_clip_tabs(bool p_clip_tabs) {

@@ -301,7 +301,7 @@ void SceneRPCInterface::_send_rpc(Node *p_node, int p_to, uint16_t p_rpc_id, con
 
 	ERR_FAIL_COND_MSG(p_argcount > 255, "Too many arguments (>255).");
 
-	if (p_to != 0 && !multiplayer->get_connected_peers().has(ABS(p_to))) {
+	if (p_to != 0 && !multiplayer->get_connected_peers().has(Math::abs(p_to))) {
 		ERR_FAIL_COND_MSG(p_to == multiplayer->get_unique_id(), "Attempt to call RPC on yourself! Peer unique ID: " + itos(multiplayer->get_unique_id()) + ".");
 
 		ERR_FAIL_MSG("Attempt to call RPC with unknown peer ID: " + itos(p_to) + ".");
@@ -461,7 +461,7 @@ void SceneRPCInterface::_send_rpc(Node *p_node, int p_to, uint16_t p_rpc_id, con
 
 Error SceneRPCInterface::rpcp(Object *p_obj, int p_peer_id, const StringName &p_method, const Variant **p_arg, int p_argcount) {
 	Ref<MultiplayerPeer> peer = multiplayer->get_multiplayer_peer();
-	ERR_FAIL_COND_V_MSG(!peer.is_valid(), ERR_UNCONFIGURED, "Trying to call an RPC while no multiplayer peer is active.");
+	ERR_FAIL_COND_V_MSG(peer.is_null(), ERR_UNCONFIGURED, "Trying to call an RPC while no multiplayer peer is active.");
 	Node *node = Object::cast_to<Node>(p_obj);
 	ERR_FAIL_COND_V_MSG(!node || !node->is_inside_tree(), ERR_INVALID_PARAMETER, "The object must be a valid Node inside the SceneTree");
 	ERR_FAIL_COND_V_MSG(peer->get_connection_status() != MultiplayerPeer::CONNECTION_CONNECTED, ERR_CONNECTION_ERROR, "Trying to call an RPC via a multiplayer peer which is not connected.");

@@ -843,7 +843,9 @@ bool DebugAdapterProtocol::request_remote_object(const ObjectID &p_object_id) {
 		return false;
 	}
 
-	EditorDebuggerNode::get_singleton()->get_default_debugger()->request_remote_object(p_object_id);
+	TypedArray<uint64_t> arr;
+	arr.append(p_object_id);
+	EditorDebuggerNode::get_singleton()->get_default_debugger()->request_remote_objects(arr);
 	object_pending_set.insert(p_object_id);
 
 	return true;
@@ -1032,6 +1034,7 @@ void DebugAdapterProtocol::on_debug_paused() {
 void DebugAdapterProtocol::on_debug_stopped() {
 	notify_exited();
 	notify_terminated();
+	reset_ids();
 }
 
 void DebugAdapterProtocol::on_debug_output(const String &p_message, int p_type) {
@@ -1247,7 +1250,7 @@ DebugAdapterProtocol::DebugAdapterProtocol() {
 	debugger_node->connect("breakpoint_toggled", callable_mp(this, &DebugAdapterProtocol::on_debug_breakpoint_toggled));
 
 	debugger_node->get_default_debugger()->connect("stopped", callable_mp(this, &DebugAdapterProtocol::on_debug_stopped));
-	debugger_node->get_default_debugger()->connect("output", callable_mp(this, &DebugAdapterProtocol::on_debug_output));
+	debugger_node->get_default_debugger()->connect(SceneStringName(output), callable_mp(this, &DebugAdapterProtocol::on_debug_output));
 	debugger_node->get_default_debugger()->connect("breaked", callable_mp(this, &DebugAdapterProtocol::on_debug_breaked));
 	debugger_node->get_default_debugger()->connect("stack_dump", callable_mp(this, &DebugAdapterProtocol::on_debug_stack_dump));
 	debugger_node->get_default_debugger()->connect("stack_frame_vars", callable_mp(this, &DebugAdapterProtocol::on_debug_stack_frame_vars));

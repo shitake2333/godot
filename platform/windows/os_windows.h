@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef OS_WINDOWS_H
-#define OS_WINDOWS_H
+#pragma once
 
 #include "crash_handler_windows.h"
 #include "key_mapping_windows.h"
@@ -37,7 +36,6 @@
 #include "core/config/project_settings.h"
 #include "core/input/input.h"
 #include "core/os/os.h"
-#include "drivers/unix/ip_unix.h"
 #include "drivers/wasapi/audio_driver_wasapi.h"
 #include "drivers/winmidi/midi_driver_winmidi.h"
 #include "servers/audio_server.h"
@@ -95,8 +93,10 @@ public:
 class JoypadWindows;
 
 class OS_Windows : public OS {
+	uint64_t target_ticks = 0;
 	uint64_t ticks_start = 0;
 	uint64_t ticks_per_second = 0;
+	uint64_t delay_resolution = 1000;
 
 	HINSTANCE hInstance;
 	MainLoop *main_loop = nullptr;
@@ -177,6 +177,7 @@ public:
 	virtual String get_name() const override;
 	virtual String get_distribution_name() const override;
 	virtual String get_version() const override;
+	virtual String get_version_alias() const override;
 
 	virtual Vector<String> get_video_adapter_driver_info() const override;
 	virtual bool get_user_prefers_integrated_gpu() const override;
@@ -189,6 +190,7 @@ public:
 
 	virtual Error set_cwd(const String &p_cwd) override;
 
+	virtual void add_frame_delay(bool p_can_draw) override;
 	virtual void delay_usec(uint32_t p_usec) const override;
 	virtual uint64_t get_ticks_usec() const override;
 
@@ -224,10 +226,11 @@ public:
 	virtual String get_config_path() const override;
 	virtual String get_data_path() const override;
 	virtual String get_cache_path() const override;
+	virtual String get_temp_path() const override;
 	virtual String get_godot_dir_name() const override;
 
 	virtual String get_system_dir(SystemDir p_dir, bool p_shared_storage = true) const override;
-	virtual String get_user_data_dir() const override;
+	virtual String get_user_data_dir(const String &p_user_dir) const override;
 
 	virtual String get_unique_id() const override;
 
@@ -248,9 +251,10 @@ public:
 
 	void set_main_window(HWND p_main_window) { main_window = p_main_window; }
 
+	virtual bool _test_create_rendering_device_and_gl(const String &p_display_driver) const override;
+	virtual bool _test_create_rendering_device(const String &p_display_driver) const override;
+
 	HINSTANCE get_hinstance() { return hInstance; }
 	OS_Windows(HINSTANCE _hInstance);
 	~OS_Windows();
 };
-
-#endif // OS_WINDOWS_H

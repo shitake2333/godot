@@ -83,7 +83,7 @@ void SceneCreateDialog::browse_types() {
 }
 
 void SceneCreateDialog::on_type_picked() {
-	other_type_display->set_text(select_node_dialog->get_selected_type().get_slice(" ", 0));
+	other_type_display->set_text(select_node_dialog->get_selected_type().get_slicec(' ', 0));
 	if (node_type_other->is_pressed()) {
 		validation_panel->update();
 	} else {
@@ -254,13 +254,14 @@ SceneCreateDialog::SceneCreateDialog() {
 		scene_name_edit = memnew(LineEdit);
 		hb->add_child(scene_name_edit);
 		scene_name_edit->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-		scene_name_edit->connect("text_submitted", callable_mp(this, &SceneCreateDialog::accept_create).unbind(1));
+		scene_name_edit->connect(SceneStringName(text_submitted), callable_mp(this, &SceneCreateDialog::accept_create).unbind(1));
 
 		List<String> extensions;
 		Ref<PackedScene> sd = memnew(PackedScene);
 		ResourceSaver::get_recognized_extensions(sd, &extensions);
 
 		scene_extension_picker = memnew(OptionButton);
+		scene_extension_picker->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
 		hb->add_child(scene_extension_picker);
 		for (const String &E : extensions) {
 			scene_extension_picker->add_item("." + E);
@@ -277,7 +278,7 @@ SceneCreateDialog::SceneCreateDialog() {
 		root_name_edit->set_tooltip_text(TTR("When empty, the root node name is derived from the scene name based on the \"editor/naming/node_name_casing\" project setting."));
 		root_name_edit->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
 		root_name_edit->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-		root_name_edit->connect("text_submitted", callable_mp(this, &SceneCreateDialog::accept_create).unbind(1));
+		root_name_edit->connect(SceneStringName(text_submitted), callable_mp(this, &SceneCreateDialog::accept_create).unbind(1));
 	}
 
 	Control *spacing = memnew(Control);

@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_STRING_H
-#define TEST_STRING_H
+#pragma once
 
 #include "core/string/ustring.h"
 
@@ -60,7 +59,7 @@ TEST_CASE("[String] Assign from Latin-1 char string (copycon)") {
 	const String &t1(s);
 	CHECK(u32scmp(t1.get_data(), U"Sheep") == 0);
 
-	String t2 = String("Sheep", 3);
+	String t2 = String::latin1(Span("Sheep", 3));
 	CHECK(u32scmp(t2.get_data(), U"She") == 0);
 }
 
@@ -467,6 +466,23 @@ TEST_CASE("[String] Erasing") {
 	CHECK(s == "Josephine is such a girl!");
 }
 
+TEST_CASE("[String] remove_char") {
+	String s = "Banana";
+	CHECK(s.remove_char('a') == "Bnn");
+	CHECK(s.remove_char('\0') == "Banana");
+	CHECK(s.remove_char('x') == "Banana");
+}
+
+TEST_CASE("[String] remove_chars") {
+	String s = "Banana";
+	CHECK(s.remove_chars("Ba") == "nn");
+	CHECK(s.remove_chars(String("Ba")) == "nn");
+	CHECK(s.remove_chars("") == "Banana");
+	CHECK(s.remove_chars(String()) == "Banana");
+	CHECK(s.remove_chars("xy") == "Banana");
+	CHECK(s.remove_chars(String("xy")) == "Banana");
+}
+
 TEST_CASE("[String] Number to string") {
 	CHECK(String::num(0) == "0.0"); // The method takes double, so always add zeros.
 	CHECK(String::num(0.0) == "0.0");
@@ -545,7 +561,10 @@ TEST_CASE("[String] String to integer") {
 		CHECK(String(nums[i]).to_int() == num[i]);
 	}
 	CHECK(String("0b1011").to_int() == 1011); // Looks like a binary number, but to_int() handles this as a base-10 number, "b" is just ignored.
+	CHECK(String("0B1011").to_int() == 1011);
+
 	CHECK(String("0x1012").to_int() == 1012); // Looks like a hexadecimal number, but to_int() handles this as a base-10 number, "x" is just ignored.
+	CHECK(String("0X1012").to_int() == 1012);
 
 	ERR_PRINT_OFF
 	CHECK(String("999999999999999999999999999999999999999999999999999999999").to_int() == INT64_MAX); // Too large, largest possible is returned.
@@ -554,10 +573,10 @@ TEST_CASE("[String] String to integer") {
 }
 
 TEST_CASE("[String] Hex to integer") {
-	static const char *nums[12] = { "0xFFAE", "22", "0", "AADDAD", "0x7FFFFFFFFFFFFFFF", "-0xf", "", "000", "000f", "0xaA", "-ff", "-" };
-	static const int64_t num[12] = { 0xFFAE, 0x22, 0, 0xAADDAD, 0x7FFFFFFFFFFFFFFF, -0xf, 0, 0, 0xf, 0xaa, -0xff, 0x0 };
+	static const char *nums[13] = { "0xFFAE", "22", "0", "AADDAD", "0x7FFFFFFFFFFFFFFF", "-0xf", "", "000", "000f", "0xaA", "-ff", "-", "0XFFAE" };
+	static const int64_t num[13] = { 0xFFAE, 0x22, 0, 0xAADDAD, 0x7FFFFFFFFFFFFFFF, -0xf, 0, 0, 0xf, 0xaa, -0xff, 0x0, 0xFFAE };
 
-	for (int i = 0; i < 12; i++) {
+	for (int i = 0; i < 13; i++) {
 		CHECK(String(nums[i]).hex_to_int() == num[i]);
 	}
 
@@ -575,10 +594,10 @@ TEST_CASE("[String] Hex to integer") {
 }
 
 TEST_CASE("[String] Bin to integer") {
-	static const char *nums[10] = { "", "0", "0b0", "0b1", "0b", "1", "0b1010", "-0b11", "-1010", "0b0111111111111111111111111111111111111111111111111111111111111111" };
-	static const int64_t num[10] = { 0, 0, 0, 1, 0, 1, 10, -3, -10, 0x7FFFFFFFFFFFFFFF };
+	static const char *nums[11] = { "", "0", "0b0", "0b1", "0b", "1", "0b1010", "-0b11", "-1010", "0b0111111111111111111111111111111111111111111111111111111111111111", "0B1010" };
+	static const int64_t num[11] = { 0, 0, 0, 1, 0, 1, 10, -3, -10, 0x7FFFFFFFFFFFFFFF, 10 };
 
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < 11; i++) {
 		CHECK(String(nums[i]).bin_to_int() == num[i]);
 	}
 
@@ -600,7 +619,7 @@ TEST_CASE("[String] String to float") {
 	static const double num[12] = { -12348298412.2, 0.05, 2.0002, -0.0001, 0.0, 0.0, 123.0, 0.0, 0.0, 0.007, 234.0, 3.0 };
 
 	for (int i = 0; i < 12; i++) {
-		CHECK(!(ABS(String(nums[i]).to_float() - num[i]) > 0.00001));
+		CHECK(!(Math::abs(String(nums[i]).to_float() - num[i]) > 0.00001));
 	}
 
 	// Invalid float strings should return 0.
@@ -711,6 +730,14 @@ TEST_CASE("[String] Splitting") {
 			CHECK(l[i] == slices[i]);
 		}
 	}
+	{
+		const String s = "Mars Jupiter Saturn Uranus";
+		const char *slices[2] = { "Mars", "Jupiter Saturn Uranus" };
+		Vector<String> l = s.split_spaces(1);
+		for (int i = 0; i < l.size(); i++) {
+			CHECK(l[i] == slices[i]);
+		}
+	}
 
 	{
 		const String s = "1.2;2.3 4.5";
@@ -719,14 +746,14 @@ TEST_CASE("[String] Splitting") {
 		const Vector<double> d_arr = s.split_floats(";");
 		CHECK(d_arr.size() == 2);
 		for (int i = 0; i < d_arr.size(); i++) {
-			CHECK(ABS(d_arr[i] - slices[i]) <= 0.00001);
+			CHECK(Math::abs(d_arr[i] - slices[i]) <= 0.00001);
 		}
 
 		const Vector<String> keys = { ";", " " };
 		const Vector<float> f_arr = s.split_floats_mk(keys);
 		CHECK(f_arr.size() == 3);
 		for (int i = 0; i < f_arr.size(); i++) {
-			CHECK(ABS(f_arr[i] - slices[i]) <= 0.00001);
+			CHECK(Math::abs(f_arr[i] - slices[i]) <= 0.00001);
 		}
 	}
 
@@ -737,7 +764,7 @@ TEST_CASE("[String] Splitting") {
 		const Vector<double> arr = s.split_floats(" ");
 		CHECK(arr.size() == 10);
 		for (int i = 0; i < arr.size(); i++) {
-			CHECK(ABS(arr[i] - slices[i]) <= 0.00001);
+			CHECK(Math::abs(arr[i] - slices[i]) <= 0.00001);
 		}
 
 		const Vector<String> keys = { ";", " " };
@@ -1687,6 +1714,10 @@ TEST_CASE("[String] Path functions") {
 	for (int i = 0; i < 3; i++) {
 		CHECK(String(file_name[i]).is_valid_filename() == valid[i]);
 	}
+
+	CHECK(String("res://texture.png") == String("res://folder/../folder/../texture.png").simplify_path());
+	CHECK(String("res://texture.png") == String("res://folder/sub/../../texture.png").simplify_path());
+	CHECK(String("res://../../texture.png") == String("res://../../texture.png").simplify_path());
 }
 
 TEST_CASE("[String] hash") {
@@ -1881,15 +1912,15 @@ TEST_CASE("[String] Join") {
 }
 
 TEST_CASE("[String] Is_*") {
-	static const char *data[13] = { "-30", "100", "10.1", "10,1", "1e2", "1e-2", "1e2e3", "0xAB", "AB", "Test1", "1Test", "Test*1", "文字" };
-	static bool isnum[13] = { true, true, true, false, false, false, false, false, false, false, false, false, false };
-	static bool isint[13] = { true, true, false, false, false, false, false, false, false, false, false, false, false };
-	static bool ishex[13] = { true, true, false, false, true, false, true, false, true, false, false, false, false };
-	static bool ishex_p[13] = { false, false, false, false, false, false, false, true, false, false, false, false, false };
-	static bool isflt[13] = { true, true, true, false, true, true, false, false, false, false, false, false, false };
-	static bool isaid[13] = { false, false, false, false, false, false, false, false, true, true, false, false, false };
-	static bool isuid[13] = { false, false, false, false, false, false, false, false, true, true, false, false, true };
-	for (int i = 0; i < 12; i++) {
+	static const char *data[] = { "-30", "100", "10.1", "10,1", "1e2", "1e-2", "1e2e3", "0xAB", "AB", "Test1", "1Test", "Test*1", "文字", "1E2", "1E-2" };
+	static bool isnum[] = { true, true, true, false, false, false, false, false, false, false, false, false, false, false, false };
+	static bool isint[] = { true, true, false, false, false, false, false, false, false, false, false, false, false, false, false };
+	static bool ishex[] = { true, true, false, false, true, false, true, false, true, false, false, false, false, true, false };
+	static bool ishex_p[] = { false, false, false, false, false, false, false, true, false, false, false, false, false, false, false };
+	static bool isflt[] = { true, true, true, false, true, true, false, false, false, false, false, false, false, true, true };
+	static bool isaid[] = { false, false, false, false, false, false, false, false, true, true, false, false, false, false, false };
+	static bool isuid[] = { false, false, false, false, false, false, false, false, true, true, false, false, true, false, false };
+	for (unsigned int i = 0; i < std::size(data); i++) {
 		String s = String::utf8(data[i]);
 		CHECK(s.is_numeric() == isnum[i]);
 		CHECK(s.is_valid_int() == isint[i]);
@@ -2096,5 +2127,3 @@ TEST_CASE("[Stress][String] Empty via `is_empty()`") {
 	}
 }
 } // namespace TestString
-
-#endif // TEST_STRING_H

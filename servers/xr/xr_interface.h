@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef XR_INTERFACE_H
-#define XR_INTERFACE_H
+#pragma once
 
 #include "core/math/projection.h"
 #include "core/os/thread_safe.h"
@@ -137,6 +136,9 @@ public:
 	virtual RID get_color_texture(); /* obtain color output texture (if applicable) */
 	virtual RID get_depth_texture(); /* obtain depth output texture (if applicable, used for reprojection) */
 	virtual RID get_velocity_texture(); /* obtain velocity output texture (if applicable, used for spacewarp) */
+	virtual RID get_velocity_depth_texture();
+	virtual Size2i get_velocity_target_size();
+	virtual Rect2i get_render_region();
 	virtual void pre_render() {}
 	virtual bool pre_draw_viewport(RID p_render_target) { return true; } /* inform XR interface we are about to start our viewport draw process */
 	virtual Vector<BlitToScreen> post_draw_viewport(RID p_render_target, const Rect2 &p_screen_rect) = 0; /* inform XR interface we finished our viewport draw process */
@@ -165,5 +167,3 @@ VARIANT_ENUM_CAST(XRInterface::Capabilities);
 VARIANT_ENUM_CAST(XRInterface::TrackingStatus);
 VARIANT_ENUM_CAST(XRInterface::PlayAreaMode);
 VARIANT_ENUM_CAST(XRInterface::EnvironmentBlendMode);
-
-#endif // XR_INTERFACE_H

@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEXT_PARAGRAPH_H
-#define TEXT_PARAGRAPH_H
+#pragma once
 
 #include "core/templates/local_vector.h"
 #include "scene/resources/font.h"
@@ -42,14 +41,14 @@ class TextParagraph : public RefCounted {
 	_THREAD_SAFE_CLASS_
 
 private:
-	RID dropcap_rid;
-	int dropcap_lines = 0;
+	mutable RID dropcap_rid;
+	mutable int dropcap_lines = 0;
 	Rect2 dropcap_margins;
 
 	RID rid;
-	LocalVector<RID> lines_rid;
+	mutable LocalVector<RID> lines_rid;
 
-	bool lines_dirty = true;
+	mutable bool lines_dirty = true;
 
 	float line_spacing = 0.0;
 	float width = -1.0;
@@ -67,7 +66,7 @@ private:
 protected:
 	static void _bind_methods();
 
-	void _shape_lines();
+	void _shape_lines() const;
 
 public:
 	RID get_rid() const;
@@ -164,5 +163,3 @@ public:
 	TextParagraph();
 	~TextParagraph();
 };
-
-#endif // TEXT_PARAGRAPH_H

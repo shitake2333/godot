@@ -48,6 +48,10 @@ void Button::_set_internal_margin(Side p_side, float p_value) {
 void Button::_queue_update_size_cache() {
 }
 
+String Button::_get_translated_text(const String &p_text) const {
+	return atr(p_text);
+}
+
 void Button::_update_theme_item_cache() {
 	Control::_update_theme_item_cache();
 
@@ -186,7 +190,7 @@ void Button::_notification(int p_what) {
 		} break;
 
 		case NOTIFICATION_TRANSLATION_CHANGED: {
-			xl_text = atr(text);
+			xl_text = _get_translated_text(text);
 			_shape();
 
 			update_minimum_size();
@@ -210,6 +214,13 @@ void Button::_notification(int p_what) {
 		} break;
 
 		case NOTIFICATION_DRAW: {
+			// Reshape and update size min. if text is invalidated by an external source (e.g., oversampling).
+			if (text_buf.is_valid() && !TS->shaped_text_is_ready(text_buf->get_rid())) {
+				_shape();
+
+				update_minimum_size();
+			}
+
 			const RID ci = get_canvas_item();
 			const Size2 size = get_size();
 
@@ -488,7 +499,7 @@ Size2 Button::get_minimum_size_for_text_and_icon(const String &p_text, Ref<Textu
 		paragraph = text_buf;
 	} else {
 		paragraph.instantiate();
-		const_cast<Button *>(this)->_shape(paragraph, p_text);
+		_shape(paragraph, p_text);
 	}
 
 	Size2 minsize = paragraph->get_size();
@@ -527,7 +538,7 @@ Size2 Button::get_minimum_size_for_text_and_icon(const String &p_text, Ref<Textu
 	return (theme_cache.align_to_largest_stylebox ? _get_largest_stylebox_size() : _get_current_stylebox()->get_minimum_size()) + minsize;
 }
 
-void Button::_shape(Ref<TextParagraph> p_paragraph, String p_text) {
+void Button::_shape(Ref<TextParagraph> p_paragraph, String p_text) const {
 	if (p_paragraph.is_null()) {
 		p_paragraph = text_buf;
 	}
@@ -559,7 +570,7 @@ void Button::_shape(Ref<TextParagraph> p_paragraph, String p_text) {
 		case TextServer::AUTOWRAP_OFF:
 			break;
 	}
-	autowrap_flags = autowrap_flags | TextServer::BREAK_TRIM_EDGE_SPACES;
+	autowrap_flags = autowrap_flags | autowrap_flags_trim;
 	p_paragraph->set_break_flags(autowrap_flags);
 	p_paragraph->set_line_spacing(theme_cache.line_spacing);
 
@@ -591,14 +602,16 @@ TextServer::OverrunBehavior Button::get_text_overrun_behavior() const {
 }
 
 void Button::set_text(const String &p_text) {
-	if (text != p_text) {
-		text = p_text;
-		xl_text = atr(text);
-		_shape();
-
-		queue_redraw();
-		update_minimum_size();
+	const String translated_text = _get_translated_text(p_text);
+	if (text == p_text && xl_text == translated_text) {
+		return;
 	}
+	text = p_text;
+	xl_text = translated_text;
+	_shape();
+
+	queue_redraw();
+	update_minimum_size();
 }
 
 String Button::get_text() const {
@@ -616,6 +629,19 @@ void Button::set_autowrap_mode(TextServer::AutowrapMode p_mode) {
 
 TextServer::AutowrapMode Button::get_autowrap_mode() const {
 	return autowrap_mode;
+}
+
+void Button::set_autowrap_trim_flags(BitField<TextServer::LineBreakFlag> p_flags) {
+	if (autowrap_flags_trim != (p_flags & TextServer::BREAK_TRIM_MASK)) {
+		autowrap_flags_trim = p_flags & TextServer::BREAK_TRIM_MASK;
+		_shape();
+		queue_redraw();
+		update_minimum_size();
+	}
+}
+
+BitField<TextServer::LineBreakFlag> Button::get_autowrap_trim_flags() const {
+	return autowrap_flags_trim;
 }
 
 void Button::set_text_direction(Control::TextDirection p_text_direction) {
@@ -759,6 +785,8 @@ void Button::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_text_overrun_behavior"), &Button::get_text_overrun_behavior);
 	ClassDB::bind_method(D_METHOD("set_autowrap_mode", "autowrap_mode"), &Button::set_autowrap_mode);
 	ClassDB::bind_method(D_METHOD("get_autowrap_mode"), &Button::get_autowrap_mode);
+	ClassDB::bind_method(D_METHOD("set_autowrap_trim_flags", "autowrap_trim_flags"), &Button::set_autowrap_trim_flags);
+	ClassDB::bind_method(D_METHOD("get_autowrap_trim_flags"), &Button::get_autowrap_trim_flags);
 	ClassDB::bind_method(D_METHOD("set_text_direction", "direction"), &Button::set_text_direction);
 	ClassDB::bind_method(D_METHOD("get_text_direction"), &Button::get_text_direction);
 	ClassDB::bind_method(D_METHOD("set_language", "language"), &Button::set_language);
@@ -784,8 +812,9 @@ void Button::_bind_methods() {
 
 	ADD_GROUP("Text Behavior", "");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "alignment", PROPERTY_HINT_ENUM, "Left,Center,Right"), "set_text_alignment", "get_text_alignment");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "text_overrun_behavior", PROPERTY_HINT_ENUM, "Trim Nothing,Trim Characters,Trim Words,Ellipsis,Word Ellipsis"), "set_text_overrun_behavior", "get_text_overrun_behavior");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "text_overrun_behavior", PROPERTY_HINT_ENUM, "Trim Nothing,Trim Characters,Trim Words,Ellipsis (6+ Characters),Word Ellipsis (6+ Characters),Ellipsis (Always),Word Ellipsis (Always)"), "set_text_overrun_behavior", "get_text_overrun_behavior");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "autowrap_mode", PROPERTY_HINT_ENUM, "Off,Arbitrary,Word,Word (Smart)"), "set_autowrap_mode", "get_autowrap_mode");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "autowrap_trim_flags", PROPERTY_HINT_FLAGS, vformat("Trim Spaces After Break:%d,Trim Spaces Before Break:%d", TextServer::BREAK_TRIM_START_EDGE_SPACES, TextServer::BREAK_TRIM_END_EDGE_SPACES)), "set_autowrap_trim_flags", "get_autowrap_trim_flags");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "clip_text"), "set_clip_text", "get_clip_text");
 
 	ADD_GROUP("Icon Behavior", "");
@@ -839,7 +868,7 @@ void Button::_bind_methods() {
 
 Button::Button(const String &p_text) {
 	text_buf.instantiate();
-	text_buf->set_break_flags(TextServer::BREAK_MANDATORY | TextServer::BREAK_TRIM_EDGE_SPACES);
+	text_buf->set_break_flags(TextServer::BREAK_MANDATORY | autowrap_flags_trim);
 	set_mouse_filter(MOUSE_FILTER_STOP);
 
 	set_text(p_text);

@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef REF_COUNTED_H
-#define REF_COUNTED_H
+#pragma once
 
 #include "core/object/class_db.h"
 #include "core/templates/safe_refcount.h"
@@ -222,7 +221,7 @@ struct PtrToArg<Ref<T>> {
 			return Ref<T>();
 		}
 		// p_ptr points to a RefCounted object
-		return Ref<T>(const_cast<T *>(*reinterpret_cast<T *const *>(p_ptr)));
+		return Ref<T>(*reinterpret_cast<T *const *>(p_ptr));
 	}
 
 	typedef Ref<T> EncodeT;
@@ -278,4 +277,6 @@ struct VariantInternalAccessor<const Ref<T> &> {
 	static _FORCE_INLINE_ void set(Variant *v, const Ref<T> &p_ref) { VariantInternal::object_assign(v, p_ref); }
 };
 
-#endif // REF_COUNTED_H
+// Zero-constructing Ref initializes reference to nullptr (and thus empty).
+template <typename T>
+struct is_zero_constructible<Ref<T>> : std::true_type {};

@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EDITOR_EXPORT_PLATFORM_H
-#define EDITOR_EXPORT_PLATFORM_H
+#pragma once
 
 class EditorFileSystemDirectory;
 struct EditorProgress;
@@ -135,6 +134,8 @@ private:
 	void _edit_files_with_filter(Ref<DirAccess> &da, const Vector<String> &p_filters, HashSet<String> &r_list, bool exclude);
 	void _edit_filter_list(HashSet<String> &r_list, const String &p_filter, bool exclude);
 
+	static Vector<uint8_t> _filter_extension_list_config_file(const String &p_config_path, const HashSet<String> &p_paths);
+
 	struct FileExportCache {
 		uint64_t source_modified_time = 0;
 		String source_md5;
@@ -199,6 +200,8 @@ protected:
 
 	Error _load_patches(const Vector<String> &p_patches);
 	void _unload_patches();
+
+	Ref<Image> _load_icon_or_splash_image(const String &p_path, Error *r_error) const;
 
 public:
 	virtual void get_preset_features(const Ref<EditorExportPreset> &p_preset, List<String> *r_features) const = 0;
@@ -275,6 +278,8 @@ public:
 		return worst_type;
 	}
 
+	Dictionary get_internal_export_files(const Ref<EditorExportPreset> &p_preset, bool p_debug);
+
 	static Vector<String> get_forced_export_files();
 
 	virtual bool fill_log_messages(RichTextLabel *p_log, Error p_err);
@@ -330,11 +335,8 @@ public:
 	virtual void get_platform_features(List<String> *r_features) const = 0;
 	virtual void resolve_platform_feature_priorities(const Ref<EditorExportPreset> &p_preset, HashSet<String> &p_features) {}
 	virtual String get_debug_protocol() const { return "tcp://"; }
-
-	EditorExportPlatform();
+	virtual HashMap<String, Variant> get_custom_project_settings(const Ref<EditorExportPreset> &p_preset) const { return HashMap<String, Variant>(); }
 };
 
 VARIANT_ENUM_CAST(EditorExportPlatform::ExportMessageType)
 VARIANT_BITFIELD_CAST(EditorExportPlatform::DebugFlags);
-
-#endif // EDITOR_EXPORT_PLATFORM_H

@@ -28,13 +28,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "os_macos.h"
+#import "os_macos.h"
 
-#include "dir_access_macos.h"
-#include "display_server_macos.h"
-#include "godot_application.h"
-#include "godot_application_delegate.h"
-#include "macos_terminal_logger.h"
+#import "dir_access_macos.h"
+#import "display_server_macos.h"
+#import "godot_application.h"
+#import "godot_application_delegate.h"
+#import "macos_terminal_logger.h"
 
 #include "core/crypto/crypto_core.h"
 #include "core/version_generated.gen.h"
@@ -42,7 +42,7 @@
 
 #include <dlfcn.h>
 #include <libproc.h>
-#include <mach-o/dyld.h>
+#import <mach-o/dyld.h>
 #include <os/log.h>
 #include <sys/sysctl.h>
 
@@ -51,7 +51,7 @@ void OS_MacOS::pre_wait_observer_cb(CFRunLoopObserverRef p_observer, CFRunLoopAc
 	// Do not redraw when rendering is done from the separate thread, it will conflict with the OpenGL context updates.
 
 	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
-	if (get_singleton()->get_main_loop() && ds && (get_singleton()->get_render_thread_mode() != RENDER_SEPARATE_THREAD) && !ds->get_is_resizing()) {
+	if (get_singleton()->get_main_loop() && ds && !get_singleton()->is_separate_thread_rendering_enabled() && !ds->get_is_resizing()) {
 		Main::force_redraw();
 		if (!Main::is_iterating()) { // Avoid cyclic loop.
 			Main::iteration();
@@ -142,13 +142,13 @@ void OS_MacOS::finalize() {
 
 	delete_main_loop();
 
-	if (joypad_macos) {
-		memdelete(joypad_macos);
+	if (joypad_apple) {
+		memdelete(joypad_apple);
 	}
 }
 
 void OS_MacOS::initialize_joypads() {
-	joypad_macos = memnew(JoypadMacOS());
+	joypad_apple = memnew(JoypadApple());
 }
 
 void OS_MacOS::set_main_loop(MainLoop *p_main_loop) {
@@ -183,6 +183,33 @@ String OS_MacOS::get_distribution_name() const {
 String OS_MacOS::get_version() const {
 	NSOperatingSystemVersion ver = [NSProcessInfo processInfo].operatingSystemVersion;
 	return vformat("%d.%d.%d", (int64_t)ver.majorVersion, (int64_t)ver.minorVersion, (int64_t)ver.patchVersion);
+}
+
+String OS_MacOS::get_version_alias() const {
+	NSOperatingSystemVersion ver = [NSProcessInfo processInfo].operatingSystemVersion;
+	String macos_string;
+	if (ver.majorVersion == 15) {
+		macos_string += "Sequoia";
+	} else if (ver.majorVersion == 14) {
+		macos_string += "Sonoma";
+	} else if (ver.majorVersion == 13) {
+		macos_string += "Ventura";
+	} else if (ver.majorVersion == 12) {
+		macos_string += "Monterey";
+	} else if (ver.majorVersion == 11 || (ver.majorVersion == 10 && ver.minorVersion == 16)) {
+		// Big Sur was 10.16 during beta, but it became 11 for the stable version.
+		macos_string += "Big Sur";
+	} else if (ver.majorVersion == 10 && ver.minorVersion == 15) {
+		macos_string += "Catalina";
+	} else if (ver.majorVersion == 10 && ver.minorVersion == 14) {
+		macos_string += "Mojave";
+	} else if (ver.majorVersion == 10 && ver.minorVersion == 13) {
+		macos_string += "High Sierra";
+	} else {
+		macos_string += "Unknown";
+	}
+	// macOS versions older than 10.13 cannot run Godot.
+	return vformat("%s (%s)", macos_string, get_version());
 }
 
 void OS_MacOS::alert(const String &p_alert, const String &p_title) {
@@ -276,6 +303,19 @@ String OS_MacOS::get_cache_path() const {
 	return get_config_path();
 }
 
+String OS_MacOS::get_temp_path() const {
+	static String ret;
+	if (ret.is_empty()) {
+		NSURL *url = [NSURL fileURLWithPath:NSTemporaryDirectory()
+								isDirectory:YES];
+		if (url) {
+			ret = String::utf8([url.path UTF8String]);
+			ret = ret.trim_prefix("file://");
+		}
+	}
+	return ret;
+}
+
 String OS_MacOS::get_bundle_resource_dir() const {
 	String ret;
 
@@ -302,7 +342,7 @@ String OS_MacOS::get_bundle_icon_path() const {
 
 // Get properly capitalized engine name for system paths
 String OS_MacOS::get_godot_dir_name() const {
-	return String(VERSION_SHORT_NAME).capitalize();
+	return String(GODOT_VERSION_SHORT_NAME).capitalize();
 }
 
 String OS_MacOS::get_system_dir(SystemDir p_dir, bool p_shared_storage) const {
@@ -504,23 +544,26 @@ Vector<String> OS_MacOS::get_system_font_path_for_text(const String &p_font_name
 	CTFontDescriptorRef font = CTFontDescriptorCreateWithAttributes(attributes);
 	if (font) {
 		CTFontRef family = CTFontCreateWithFontDescriptor(font, 0, nullptr);
-		CFStringRef string = CFStringCreateWithCString(kCFAllocatorDefault, p_text.utf8().get_data(), kCFStringEncodingUTF8);
-		CFRange range = CFRangeMake(0, CFStringGetLength(string));
-		CTFontRef fallback_family = CTFontCreateForString(family, string, range);
-		if (fallback_family) {
-			CTFontDescriptorRef fallback_font = CTFontCopyFontDescriptor(fallback_family);
-			if (fallback_font) {
-				CFURLRef url = (CFURLRef)CTFontDescriptorCopyAttribute(fallback_font, kCTFontURLAttribute);
-				if (url) {
-					NSString *font_path = [NSString stringWithString:[(__bridge NSURL *)url path]];
-					ret.push_back(String::utf8([font_path UTF8String]));
-					CFRelease(url);
+		if (family) {
+			CFStringRef string = CFStringCreateWithCString(kCFAllocatorDefault, p_text.utf8().get_data(), kCFStringEncodingUTF8);
+			CFRange range = CFRangeMake(0, CFStringGetLength(string));
+			CTFontRef fallback_family = CTFontCreateForString(family, string, range);
+			if (fallback_family) {
+				CTFontDescriptorRef fallback_font = CTFontCopyFontDescriptor(fallback_family);
+				if (fallback_font) {
+					CFURLRef url = (CFURLRef)CTFontDescriptorCopyAttribute(fallback_font, kCTFontURLAttribute);
+					if (url) {
+						NSString *font_path = [NSString stringWithString:[(__bridge NSURL *)url path]];
+						ret.push_back(String::utf8([font_path UTF8String]));
+						CFRelease(url);
+					}
+					CFRelease(fallback_font);
 				}
-				CFRelease(fallback_font);
+				CFRelease(fallback_family);
 			}
-			CFRelease(fallback_family);
+			CFRelease(string);
+			CFRelease(family);
 		}
-		CFRelease(string);
 		CFRelease(font);
 	}
 
@@ -766,7 +809,8 @@ String OS_MacOS::get_system_ca_certificates() {
 		Error err = CryptoCore::b64_encode(pba.ptrw(), pba.size(), &b64len, (unsigned char *)CFDataGetBytePtr(der), derlen);
 		CFRelease(der);
 		ERR_CONTINUE(err != OK);
-		certs += "-----BEGIN CERTIFICATE-----\n" + String((char *)pba.ptr(), b64len) + "\n-----END CERTIFICATE-----\n";
+		// Certificate is bas64 encoded, aka ascii.
+		certs += "-----BEGIN CERTIFICATE-----\n" + String::ascii(Span((char *)pba.ptr(), b64len)) + "\n-----END CERTIFICATE-----\n";
 	}
 	CFRelease(result);
 	return certs;
@@ -794,7 +838,7 @@ void OS_MacOS::run() {
 				if (DisplayServer::get_singleton()) {
 					DisplayServer::get_singleton()->process_events(); // Get rid of pending events.
 				}
-				joypad_macos->start_processing();
+				joypad_apple->process_joypads();
 
 				if (Main::iteration()) {
 					quit = true;
