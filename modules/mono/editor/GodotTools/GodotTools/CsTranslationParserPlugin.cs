@@ -25,10 +25,7 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
     }
 
     private List<MetadataReference>? _projectReferences;
-    private Array<string>? _msgids;
-    private Array<Array>? _msgidsContextPlural;
-    private Array<string>? _msgidsComment;
-    private Array<string>? _msgidsContextPluralComment;
+    private Array<string[]> _ret = new Array<string[]>();
     private List<SyntaxTree> _syntaxTreeCaches = new List<SyntaxTree>();
 
     private const string TranslationCommentPrefix = "TRANSLATORS:";
@@ -44,15 +41,12 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
 
     public override string[] _GetRecognizedExtensions()
     {
-        return new[] { "cs" };
+        return ["cs"];
     }
 
-    public override void _ParseFile(string path, Array<string> msgids, Array<Array> msgidsContextPlural)
+    public override Array<string[]> _ParseFile(string path)
     {
-        _msgids = new Array<string>();
-        _msgidsContextPlural = new Array<Array>();
-        _msgidsComment = new Array<string>();
-        _msgidsContextPluralComment = new Array<string>();
+        _ret = new Array<string[]>();
 
         if (_projectReferences == null)
         {
@@ -92,20 +86,7 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
             }
         }
         _syntaxTreeCaches.Clear();
-        msgids.AddRange(_msgids);
-        msgidsContextPlural.AddRange(_msgidsContextPlural);
-    }
-
-    public override void _GetComments(Array<string> msgidsComment, Array<string> msgidsContextPluralComment)
-    {
-        if (_msgidsComment != null)
-        {
-            msgidsComment.AddRange(_msgidsComment);
-        }
-        if (_msgidsContextPluralComment != null)
-        {
-            msgidsContextPluralComment.AddRange(_msgidsContextPluralComment);
-        }
+        return _ret;
     }
 
     private void ParseCode(string code, string[] symbols, List<MetadataReference> references)
@@ -303,8 +284,7 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
 
                 if (constantValue.HasValue && constantValue.Value is string message)
                 {
-                    _msgids?.Add(message);
-                    _msgidsComment?.Add(comment);
+                    _ret?.Add([message, "", "", comment]);
                 }
 
                 break;
@@ -320,8 +300,7 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
                 if (msgValue.HasValue && msgValue.Value is string message &&
                     ctxValue.HasValue && ctxValue.Value is string context)
                 {
-                    _msgidsContextPlural?.Add(new Array { message, context, "" });
-                    _msgidsContextPluralComment?.Add(comment);
+                    _ret?.Add([message, context, "", comment]);
                 }
 
                 break;
@@ -350,8 +329,7 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
                 context = ctx;
             }
         }
-        _msgidsContextPlural?.Add(new Array { singular, context, plural });
-        _msgidsContextPluralComment?.Add(comment);
+        _ret?.Add([singular, context, plural, comment]);
     }
 
     private List<MetadataReference> GetProjectReferences(string projectPath, string configuration = "Debug", string? targetPlatform = null)
