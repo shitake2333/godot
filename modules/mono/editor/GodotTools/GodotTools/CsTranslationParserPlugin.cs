@@ -36,8 +36,8 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
     private const string TranslationClass = "Godot.GodotObject";
     private const string TranslationMethodTr = "Tr";
     private const string TranslationMethodTrN = "TrN";
-    private static readonly string[] Configurations = new string[] { "Debug", "Release" };
-    private static readonly string[] TargetPlatforms = new string[] { "windows", "linuxbsd", "macos", "android", "ios", "web" };
+    private static readonly string[] _configurations = ["Debug", "Release"];
+    private static readonly string[] _targetPlatforms = ["windows", "linuxbsd", "macos", "android", "ios", "web"];
 
     public override string[] _GetRecognizedExtensions()
     {
@@ -46,18 +46,21 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
 
     public override Array<string[]> _ParseFile(string path)
     {
-        _ret = new Array<string[]>();
+        _ret = [];
 
         if (_projectReferences == null)
         {
             _projectReferences = new List<MetadataReference>();
-            foreach (string configuration in Configurations)
+            foreach (string configuration in _configurations)
             {
-                foreach (string targetPlatform in TargetPlatforms)
+                foreach (string targetPlatform in _targetPlatforms)
                 {
                     GetProjectReferences(GodotSharpDirs.ProjectCsProjPath, configuration, targetPlatform).ForEach(reference =>
                     {
-                        if (!_projectReferences.Contains(reference)) _projectReferences.Add(reference);
+                        if (!_projectReferences.Contains(reference))
+                        {
+                            _projectReferences.Add(reference);
+                        }
                     });
                 }
             }
@@ -69,19 +72,21 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
                 .ToList()
                 .ForEach(reference =>
                 {
-                    if (!_projectReferences.Contains(reference)) _projectReferences.Add(reference);
+                    if (!_projectReferences.Contains(reference))
+                    {
+                        _projectReferences.Add(reference);
+                    }
                 });
         }
 
         var res = ResourceLoader.Load<CSharpScript>(path, "Script");
         var text = res.SourceCode;
 
-        string[] symbols = new string[] { };
-        foreach (string configuration in Configurations)
+        foreach (string configuration in _configurations)
         {
-            foreach (string targetPlatform in TargetPlatforms)
+            foreach (string targetPlatform in _targetPlatforms)
             {
-                symbols = GetProjectDefineConstants(GodotSharpDirs.ProjectCsProjPath, configuration, targetPlatform);
+                var symbols = GetProjectDefineConstants(GodotSharpDirs.ProjectCsProjPath, configuration, targetPlatform);
                 ParseCode(text, symbols, _projectReferences);
             }
         }
@@ -93,7 +98,10 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
     {
         var options = new CSharpParseOptions(LanguageVersion.Default, DocumentationMode.Parse, SourceCodeKind.Script, symbols);
         var tree = CSharpSyntaxTree.ParseText(code, options);
-        if (SyntaxTreeContains(tree) || tree == null) return;
+        if (SyntaxTreeContains(tree) || tree == null)
+        {
+            return;
+        }
         _syntaxTreeCaches.Add(tree);
         var compilation = CSharpCompilation.Create("TranslationParser", options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
             .AddReferences(references)
@@ -164,7 +172,10 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
                     }
                     // multiline single line comment
                     var currentComment = multilineCommentData.Comment.TrimStart('/').Trim();
-                    if (currentComment == "") continue;
+                    if (currentComment == "")
+                    {
+                        continue;
+                    }
                     if (commentText == "")
                     {
                         commentText = currentComment;
@@ -192,37 +203,47 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
             {
                 symbolInfo = semanticModel.GetSymbolInfo(identifierNameSyntax);
             }
-            if (invocation.Expression is MemberAccessExpressionSyntax memberAccessExpressionSyntax &&
-                memberAccessExpressionSyntax.Name is IdentifierNameSyntax nameSyntax)
+            if (invocation.Expression is MemberAccessExpressionSyntax { Name: IdentifierNameSyntax nameSyntax })
             {
                 symbolInfo = semanticModel.GetSymbolInfo(nameSyntax);
             }
 
             var methodSymbol = symbolInfo?.Symbol as IMethodSymbol;
             if (methodSymbol == null)
+            {
                 continue;
+            }
             if (methodSymbol.Name == TranslationMethod &&
                 methodSymbol.ContainingType.ToDisplayString() == TranslationStaticClass)
             {
-                if (skip) continue;
+                if (skip)
+                {
+                    continue;
+                }
                 AddMsg(invocation.ArgumentList.Arguments, semanticModel, commentText);
             }
 
             if (methodSymbol.Name == TranslationPluralMethod &&
                 methodSymbol.ContainingType.ToDisplayString() == TranslationStaticClass)
             {
-                if (skip) continue;
+                if (skip)
+                {
+                    continue;
+                }
                 AddPluralMsg(invocation.ArgumentList.Arguments, semanticModel, commentText);
             }
 
-            if ((methodSymbol.Name == TranslationMethodTr || methodSymbol.Name == TranslationMethodTrN)
+            if (methodSymbol.Name is TranslationMethodTr or TranslationMethodTrN
                 && methodSymbol.MethodKind == MethodKind.Ordinary)
             {
                 var receiverType = methodSymbol.ReceiverType ?? methodSymbol.ContainingType;
 
                 if (receiverType != null && InheritsFromGodotObject(receiverType))
                 {
-                    if (skip) continue;
+                    if (skip)
+                    {
+                        continue;
+                    }
                     if (methodSymbol.Name == TranslationMethodTr)
                     {
                         AddMsg(invocation.ArgumentList.Arguments, semanticModel, commentText);
@@ -238,17 +259,7 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
 
     private bool SyntaxTreeContains(SyntaxTree otherTree)
     {
-        bool result = false;
-
-        for (int i = 0; i < _syntaxTreeCaches.Count; i++)
-        {
-            if (_syntaxTreeCaches[i].GetRoot().IsEquivalentTo(otherTree.GetRoot()))
-            {
-                result = true;
-                break;
-            }
-        }
-        return result;
+        return _syntaxTreeCaches.Any(syntaxTree => syntaxTree.GetRoot().IsEquivalentTo(otherTree.GetRoot()));
     }
     private int GetStartLine(Location location)
     {
@@ -265,7 +276,9 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
         while (typeSymbol != null)
         {
             if (typeSymbol.ToDisplayString() == TranslationClass)
+            {
                 return true;
+            }
 #pragma warning disable CS8600
             typeSymbol = typeSymbol.BaseType;
 #pragma warning restore CS8600
@@ -282,9 +295,9 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
                 var argExpr = arguments[0].Expression;
                 var constantValue = semanticModel.GetConstantValue(argExpr);
 
-                if (constantValue.HasValue && constantValue.Value is string message)
+                if (constantValue is { HasValue: true, Value: string message })
                 {
-                    _ret?.Add([message, "", "", comment]);
+                    _ret.Add([message, "", "", comment]);
                 }
 
                 break;
@@ -297,10 +310,10 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
                 var msgValue = semanticModel.GetConstantValue(msgExpr);
                 var ctxValue = semanticModel.GetConstantValue(ctxExpr);
 
-                if (msgValue.HasValue && msgValue.Value is string message &&
-                    ctxValue.HasValue && ctxValue.Value is string context)
+                if (msgValue is { HasValue: true, Value: string message } &&
+                    ctxValue is { HasValue: true, Value: string context })
                 {
-                    _ret?.Add([message, context, "", comment]);
+                    _ret.Add([message, context, "", comment]);
                 }
 
                 break;
@@ -317,19 +330,22 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
         var pluralValue = semanticModel.GetConstantValue(pluralExpr);
 
         if (!singularValue.HasValue || singularValue.Value is not string singular ||
-            !pluralValue.HasValue || pluralValue.Value is not string plural) return;
+            !pluralValue.HasValue || pluralValue.Value is not string plural)
+        {
+            return;
+        }
 
         var context = "";
         if (arguments.Count == 4)
         {
             var ctxExpr = arguments[3].Expression;
             var ctxValue = semanticModel.GetConstantValue(ctxExpr);
-            if (ctxValue.HasValue && ctxValue.Value is string ctx)
+            if (ctxValue is { HasValue: true, Value: string ctx })
             {
                 context = ctx;
             }
         }
-        _ret?.Add([singular, context, plural, comment]);
+        _ret.Add([singular, context, plural, comment]);
     }
 
     private List<MetadataReference> GetProjectReferences(string projectPath, string configuration = "Debug", string? targetPlatform = null)
@@ -366,7 +382,7 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
         project.SetProperty("GodotTargetPlatform", targetPlatform);
 
         var buildParameters = new BuildParameters(projectCollection);
-        var buildRequest = new BuildRequestData(project.FullPath, project.GlobalProperties, null, new[] { "GetTargetPath" }, null);
+        var buildRequest = new BuildRequestData(project.FullPath, project.GlobalProperties, null, ["GetTargetPath"], null);
         var buildResult = BuildManager.DefaultBuildManager.Build(buildParameters, buildRequest);
 
         if (buildResult.OverallResult == BuildResultCode.Success)
@@ -386,7 +402,7 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
         {
             MSBuildLocator.RegisterDefaults();
         }
-        string[] defineConstants = new string[] { };
+        string[] defineConstants = [];
 
         var projectCollection = new ProjectCollection();
         var project = projectCollection.LoadProject(projectPath);
@@ -407,13 +423,13 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
         task.SetParameter("Overwrite", "true");
 
         var buildParameters = new BuildParameters(projectCollection);
-        var buildRequest = new BuildRequestData(project.FullPath, project.GlobalProperties, null, new[] { "GetDefineConstants" }, null);
+        var buildRequest = new BuildRequestData(project.FullPath, project.GlobalProperties, null, ["GetDefineConstants"], null);
         var buildResult = BuildManager.DefaultBuildManager.Build(buildParameters, buildRequest);
 
         if (buildResult.OverallResult == BuildResultCode.Success)
         {
             var defineConstantsOutput = File.ReadAllText(tempFilePath);
-            if (defineConstantsOutput != null)
+            if (string.IsNullOrEmpty(defineConstantsOutput))
             {
                 defineConstants = defineConstantsOutput.Split('\n')
                     .Select(symbol => symbol.Trim('\r').Trim('\n'))
