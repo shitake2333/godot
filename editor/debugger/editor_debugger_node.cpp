@@ -31,19 +31,19 @@
 #include "editor_debugger_node.h"
 
 #include "core/object/undo_redo.h"
+#include "editor/debugger/editor_debugger_plugin.h"
 #include "editor/debugger/editor_debugger_tree.h"
 #include "editor/debugger/script_editor_debugger.h"
+#include "editor/docks/inspector_dock.h"
+#include "editor/docks/scene_tree_dock.h"
 #include "editor/editor_log.h"
 #include "editor/editor_node.h"
-#include "editor/editor_settings.h"
 #include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/gui/editor_bottom_panel.h"
-#include "editor/gui/editor_run_bar.h"
-#include "editor/inspector_dock.h"
-#include "editor/plugins/editor_debugger_plugin.h"
-#include "editor/plugins/script_editor_plugin.h"
-#include "editor/scene_tree_dock.h"
+#include "editor/run/editor_run_bar.h"
+#include "editor/script/script_editor_plugin.h"
+#include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_theme_manager.h"
 #include "scene/gui/menu_button.h"
 #include "scene/gui/tab_container.h"
@@ -67,6 +67,7 @@ EditorDebuggerNode::EditorDebuggerNode() {
 
 	add_theme_constant_override("margin_left", -EditorNode::get_singleton()->get_editor_theme()->get_stylebox(SNAME("BottomPanelDebuggerOverride"), EditorStringName(EditorStyles))->get_margin(SIDE_LEFT));
 	add_theme_constant_override("margin_right", -EditorNode::get_singleton()->get_editor_theme()->get_stylebox(SNAME("BottomPanelDebuggerOverride"), EditorStringName(EditorStyles))->get_margin(SIDE_RIGHT));
+	add_theme_constant_override("margin_bottom", -EditorNode::get_singleton()->get_editor_theme()->get_stylebox(SNAME("BottomPanelDebuggerOverride"), EditorStringName(EditorStyles))->get_margin(SIDE_BOTTOM));
 
 	tabs = memnew(TabContainer);
 	tabs->set_tabs_visible(false);
@@ -116,6 +117,7 @@ ScriptEditorDebugger *EditorDebuggerNode::_add_debugger() {
 	node->connect("remote_tree_updated", callable_mp(this, &EditorDebuggerNode::_remote_tree_updated).bind(id));
 	node->connect("remote_objects_updated", callable_mp(this, &EditorDebuggerNode::_remote_objects_updated).bind(id));
 	node->connect("remote_object_property_updated", callable_mp(this, &EditorDebuggerNode::_remote_object_property_updated).bind(id));
+	node->connect("remote_objects_requested", callable_mp(this, &EditorDebuggerNode::_remote_objects_requested).bind(id));
 	node->connect("set_breakpoint", callable_mp(this, &EditorDebuggerNode::_breakpoint_set_in_tree).bind(id));
 	node->connect("clear_breakpoints", callable_mp(this, &EditorDebuggerNode::_breakpoints_cleared_in_tree).bind(id));
 	node->connect("errors_cleared", callable_mp(this, &EditorDebuggerNode::_update_errors));
@@ -309,9 +311,7 @@ void EditorDebuggerNode::stop(bool p_force) {
 
 	// Also close all debugging sessions.
 	_for_all(tabs, [&](ScriptEditorDebugger *dbg) {
-		if (dbg->is_session_active()) {
-			dbg->_stop_and_notify();
-		}
+		dbg->_stop_and_notify();
 	});
 	_break_state_changed();
 	breakpoints.clear();
@@ -327,11 +327,12 @@ void EditorDebuggerNode::_notification(int p_what) {
 			}
 
 			if (tabs->get_tab_count() > 1) {
-				add_theme_constant_override("margin_left", -EditorNode::get_singleton()->get_editor_theme()->get_stylebox(SNAME("BottomPanelDebuggerOverride"), EditorStringName(EditorStyles))->get_margin(SIDE_LEFT));
-				add_theme_constant_override("margin_right", -EditorNode::get_singleton()->get_editor_theme()->get_stylebox(SNAME("BottomPanelDebuggerOverride"), EditorStringName(EditorStyles))->get_margin(SIDE_RIGHT));
-
 				tabs->add_theme_style_override(SceneStringName(panel), EditorNode::get_singleton()->get_editor_theme()->get_stylebox(SNAME("DebuggerPanel"), EditorStringName(EditorStyles)));
 			}
+
+			add_theme_constant_override("margin_left", -EditorNode::get_singleton()->get_editor_theme()->get_stylebox(SNAME("BottomPanelDebuggerOverride"), EditorStringName(EditorStyles))->get_margin(SIDE_LEFT));
+			add_theme_constant_override("margin_right", -EditorNode::get_singleton()->get_editor_theme()->get_stylebox(SNAME("BottomPanelDebuggerOverride"), EditorStringName(EditorStyles))->get_margin(SIDE_RIGHT));
+			add_theme_constant_override("margin_bottom", -EditorNode::get_singleton()->get_editor_theme()->get_stylebox(SNAME("BottomPanelDebuggerOverride"), EditorStringName(EditorStyles))->get_margin(SIDE_BOTTOM));
 
 			remote_scene_tree->update_icon_max_width();
 		} break;
@@ -523,7 +524,7 @@ void EditorDebuggerNode::_debug_data(const String &p_msg, const Array &p_data, i
 
 void EditorDebuggerNode::set_script_debug_button(MenuButton *p_button) {
 	script_menu = p_button;
-	script_menu->set_text(TTR("Debug"));
+	script_menu->set_text(TTRC("Debug"));
 	script_menu->set_switch_on_hover(true);
 	PopupMenu *p = script_menu->get_popup();
 	p->add_shortcut(ED_GET_SHORTCUT("debugger/step_into"), DEBUG_STEP);
@@ -679,8 +680,6 @@ void EditorDebuggerNode::request_remote_tree() {
 }
 
 void EditorDebuggerNode::set_remote_selection(const TypedArray<int64_t> &p_ids) {
-	remote_scene_tree->select_nodes(p_ids);
-
 	stop_waiting_inspection();
 	get_current_debugger()->request_remote_objects(p_ids);
 }

@@ -103,9 +103,7 @@ Vector<Vector<Vector2>> Geometry2D::decompose_many_polygons_in_convex(const Vect
 
 	decomp.resize(out_poly.size());
 	int idx = 0;
-	for (List<TPPLPoly>::Element *I = out_poly.front(); I; I = I->next()) {
-		TPPLPoly &tp = I->get();
-
+	for (TPPLPoly &tp : out_poly) {
 		decomp.write[idx].resize(tp.GetNumPoints());
 
 		for (int64_t i = 0; i < tp.GetNumPoints(); i++) {
@@ -228,8 +226,8 @@ void Geometry2D::make_atlas(const Vector<Size2i> &p_rects, Vector<Point2i> &r_re
 	real_t best_aspect = 1e20;
 
 	for (int i = 0; i < results.size(); i++) {
-		real_t h = next_power_of_2(results[i].max_h);
-		real_t w = next_power_of_2(results[i].max_w);
+		real_t h = next_power_of_2((uint32_t)results[i].max_h);
+		real_t w = next_power_of_2((uint32_t)results[i].max_w);
 		real_t aspect = h > w ? h / w : w / h;
 		if (aspect < best_aspect) {
 			best = i;

@@ -122,6 +122,7 @@ private:
 	bool is_bound = false;
 	bool started = false;
 	bool running = true;
+	bool in_step = false;
 	bool dead = false;
 	bool valid = false;
 	bool default_parallel = false;
@@ -135,7 +136,6 @@ private:
 
 	void _start_tweeners();
 	void _stop_internal(bool p_reset);
-	bool _validate_type_match(const Variant &p_from, Variant &r_to);
 
 protected:
 	static void _bind_methods();
@@ -199,6 +199,8 @@ VARIANT_ENUM_CAST(Tween::EaseType);
 
 class PropertyTweener : public Tweener {
 	GDCLASS(PropertyTweener, Tweener);
+
+	double _get_custom_interpolated_value(const Variant &p_value);
 
 public:
 	Ref<PropertyTweener> from(const Variant &p_value);
